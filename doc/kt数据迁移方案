@@ -1,0 +1,61 @@
+1.
+mcs_company_info.data_pass
+null、未申报，0、审核不通过，1、审核通过，2、待审核，4、待提交
+
+mcs_organ_audit.auditstatus
+1、待审核 2、审核不通过 3、 审核通过 4 、采购中心修改 99、初始生成
+
+未申报：注册有证书，但是没在平台上申报
+
+=====================
+
+1.凯特机构相关的表如下：
+-- 企业
+mcs_company_info 企业基础信息表
+mcs_company_info_do 企业申报流程表
+mcs_company_info_do_his 企业历次申报审核记录表
+mcs_organ_audit 企业申报审核表
+-- 医疗机构
+mcs_hospital_info
+-- 监管单位
+mcs_regulator_info
+-- 用户数据（视图view），凯特用户+我们的用户
+vm_all_user_info
+
+2.各个表记录的数据状态：
+按流程来： 初始生成、待提交、待审核、审核通过/审核不通过
+a.企业绑定好ca证书，导入数据，初始化：
+mcs_company_info 中插入一条记录，null未申报
+mcs_company_info_do_his 中插入一条记录（his只会新增数据，不会删除或修改）
+mcs_organ_audit 中插入一条记录，99初始生成
+b.企业修改数据本地保存，未提交
+mcs_company_info 记录状态由 null未申报->4待提交
+mcs_company_info_do 插入一条对应记录
+mcs_company_info_do_his 插入一条对应记录
+c.企业提交审核
+mcs_company_info 记录状态 4待提交->2待审核
+mcs_company_info_do_his 插入一条对应的记录
+mcs_organ_audit 对应的记录状态变更 99初始生成->1待审核
+d.审核通过
+mcs_company_info 记录状态 2待审核->1审核通过
+mcs_company_info_do 删除对应的记录
+mcs_company_info_do_his 插入一条对应的记录
+mcs_organ_audit 对应记录状态变更 1待审核->3审核通过
+e.审核不通过
+mcs_company_info 记录状态 2待审核->0审核不通过
+mcs_company_info_do_his 插入一条对应的记录
+mcs_organ_audit 对应记录状态变更 1待审核->2审核不通过
+
+3.记录一有变更，就会有changeid
+4.ent_id + changid 确保唯一记录
+5.mcs_organ_audit 表主要是用来记录监管单位的审核意见
+
+数据合并方案：
+1.mcs_company_info、mcs_hospital_info、mcs_regulator_info三张表合并到uas_org_info
+2.mcs_organ_audit、mcs_company_info_do 两张表合并到uas_org_info_modify_apply
+3.uas新建一张操作历史记录表 uas_org_info_modify_apply_his,数据由mcs_company_info_do_his同步来
+
+
+
+
+
