@@ -2,6 +2,7 @@ package com.transform.work;
 
 import com.alexfu.sqlitequerybuilder.api.SQLiteQueryBuilder;
 import com.transform.config.TsMysqlTemplate;
+import com.transform.work.kt.SupAreaMergeWork;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,12 +18,10 @@ import javax.annotation.Resource;
 public class KtTransStartor implements CommandLineRunner {
 
     @Resource
-    private TsMysqlTemplate tsmt;
+    private SupAreaMergeWork supAreaMergeWork;
 
     @Override
     public void run(String... strings) throws Exception {
-        String query = SQLiteQueryBuilder.select("ID","ACCOUNT").from("vm_all_user_info").build();
-        System.out.println(query);
-        //System.out.println(tsmt.query(query));
+        supAreaMergeWork.merge();
     }
 }

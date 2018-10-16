@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GlobalUtils {
+public class GlobalUtil {
 	/**
 	 * 当前线程暂停
 	 * @param millis
@@ -391,7 +391,7 @@ public class GlobalUtils {
 				try {
 					return new SimpleDateFormat(format).parse(s);
 				} catch (ParseException e) {
-					throw GlobalUtils.createException("CONVERT_DATE_ERROR", "不能将" + obj + "按" + format+"格式转成日期对象", e);
+					throw GlobalUtil.createException("CONVERT_DATE_ERROR", "不能将" + obj + "按" + format+"格式转成日期对象", e);
 				}
 			}
 		}
