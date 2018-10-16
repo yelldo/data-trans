@@ -1,30 +1,43 @@
-package com.transform.work;
+package com.transform.work.kt;
 
 import com.alexfu.sqlitequerybuilder.api.SQLiteQueryBuilder;
+import com.alexfu.sqlitequerybuilder.builder.SegmentBuilder;
+import com.sun.scenario.effect.Merge;
+import com.transform.jdbc.Ops;
+import com.transform.work.AbstractWorker;
+import com.transform.work.MergeWork;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 /**
+ * 机构表迁移合并
+ * kt/MCS_COMPANY_INFO + kt/MCS_HOSPITAL_INFO + kt/MCS_REGULATOR_INFO -> hx/uas_org_info
+ *
  * Created by tianhc on 2018/10/16.
  */
-public class OrgMergeWorK {
-
-    public boolean merge() {
-        //select * from d_code where categoryno = '0010';
-
-        String query = SQLiteQueryBuilder
-                .select(MCS_COMPANY_INFO_COLUMNS)
-                .from(MCS_COMPANY_INFO)
-                .where("id = 1")
-                .orderBy("rank")
-                .desc()
-                .limit(10)
-                .offset(5)
-                .build();
-
-
-        return false;
-    }
+@Service
+public class OrgMergeWork extends AbstractWorker implements MergeWork{
 
     private static final String MCS_COMPANY_INFO = "mcs_company_info";
+    private static final String MCS_HOSPITAL_INFO = "mcs_hospital_info";
+    private static final String MCS_REGULATOR_INFO = "mcs_regulator_info";
+    private static final String UAS_ORG_INFO = "uas_org_info_tmp";
+
+    @Override
+    public boolean merge() {
+        //Map<String,Object> count = tt.queryFirst("select count(1) from " + MCS_COMPANY_INFO);
+        //
+        //int offset = 0;
+        //int limit = 100;
+        //SegmentBuilder sb = SQLiteQueryBuilder.select("*").from(MCS_COMPANY_INFO).limit(limit);
+        //List<Map<String, Object>> ret = tt.queryForMapList(sql, null);
+
+
+        return true;
+    }
+
     private static final String[] MCS_COMPANY_INFO_COLUMNS = {
             "ENT_ID",
             "COMPID",

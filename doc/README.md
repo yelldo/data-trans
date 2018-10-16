@@ -62,6 +62,22 @@ select count(1) from mcs_company_info_do_his; -- 16958
 -- 所有用户表
 -- select count(1) from vw_all_user_info; -- 13439
 -- select * from vw_all_user_info;
+
+-- 查看表字段关键信息
+-- 企业信息表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_company_info';
+-- 医疗机构表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_hospital_info';
+-- 管理单位表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_regulator_info';
+-- 企业变更记录表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_company_info_do';
+-- 企业变更操作历史记录表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_company_info_do_his';
+-- 机构审核表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'mcs_organ_audit';
+-- 业务码表
+Select COLUMN_NAME,COLUMN_TYPE,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = 'd_code';
 ```
 2. 通过java转换程序，整理成可用的生产数据
 

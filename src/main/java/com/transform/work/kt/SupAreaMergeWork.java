@@ -40,8 +40,8 @@ public class SupAreaMergeWork extends AbstractWorker implements MergeWork {
             if (StringUtils.isBlank(map.get("parentno") + "")) {
                 volVal.put("level", 1);
             } else {
-                Object pno = tt.queryFirst("select parentno from " + D_CODE + " where parentno = '" + Long.valueOf(map.get("parentno") + "") + "'");
-                if (StringUtils.isBlank(pno + "")) {
+                Map<String,Object> pno = tt.queryFirst("select parentno from " + D_CODE + " where parentno = '" + Long.valueOf(map.get("parentno") + "") + "'");
+                if (StringUtils.isBlank(pno.get("parentno") + "")) {
                     volVal.put("level", 2);
                 } else {
                     volVal.put("level", 3);

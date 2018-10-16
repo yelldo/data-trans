@@ -126,7 +126,7 @@ public class TsMysqlTemplate {
         return jt.queryForList(sql);
     }
 
-    public Object queryFirst(String sql) {
+    public Map<String,Object> queryFirst(String sql) {
         return jt.queryForList(sql).get(0);
     }
 
