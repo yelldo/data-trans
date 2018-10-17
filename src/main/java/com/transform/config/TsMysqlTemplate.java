@@ -3,7 +3,7 @@ package com.transform.config;
 import com.alibaba.fastjson.JSONArray;
 import com.transform.exception.TsException;
 import com.transform.jdbc.ResultRowExtractor;
-import com.transform.utils.GlobalUtil;
+import com.transform.util.GlobalUtils;
 import com.transform.jdbc.PageData;
 import groovy.lang.Closure;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +31,6 @@ public class TsMysqlTemplate {
     @Autowired
     public TsMysqlTemplate(JdbcTemplate jdbcTemplate) {
         this.jt = jdbcTemplate;
-    }
-
-    public void printMine() {
-        System.out.println(jt);
     }
 
     /**
@@ -122,17 +118,27 @@ public class TsMysqlTemplate {
         }
     }
 
-    public List query(String sql) {
-        return jt.queryForList(sql);
+    public List<Map<String, Object>> query(String sql, Object... params) {
+        return jt.queryForList(sql, params);
     }
 
-    public Map<String,Object> queryFirst(String sql) {
-        return jt.queryForList(sql).get(0);
+    /**
+     * 没有数据返回null
+     * @param sql
+     * @param params
+     * @return
+     */
+    public Map<String, Object> queryFirst(String sql, Object... params) {
+        List<Map<String,Object>> ret = query(sql,params);
+        if (ret.size() == 0) {
+            return null;
+        }
+        return ret.get(0);
     }
 
-    public <T> T query(String sql, Object[] args, ResultSetExtractor<T> resultSetExtractor) {
-        log.debug("执行SQL:{},{}", sql, args != null ? Arrays.asList(args) : null);
-        return (T) jt.query(sql, args, resultSetExtractor);
+    public <T> T query(String sql, Object[] params, ResultSetExtractor<T> resultSetExtractor) {
+        log.debug("执行SQL:{},{}", sql, params != null ? Arrays.asList(params) : null);
+        return (T) jt.query(sql, params, resultSetExtractor);
     }
 
     public List<Object> find(String sql, Object[] params, Closure<Object> closure) {
@@ -290,17 +296,17 @@ public class TsMysqlTemplate {
             params = (Map<String, Object>) param;
             if (type == 2 || type == 1) {
                 //limit
-                start = GlobalUtil.converToIntValue(params.get("start"), 0);
+                start = GlobalUtils.converToIntValue(params.get("start"), 0);
                 start = start < 0 ? 0 : start;
-                limit = GlobalUtil.converToIntValue(params.get("limit"), 20);
+                limit = GlobalUtils.converToIntValue(params.get("limit"), 20);
                 limit = limit < 1 ? 20 : limit;
                 params.remove("limit");
                 params.remove("start");
             } else if (type == 3) {
                 //分页
-                page = GlobalUtil.converToIntValue(params.get("page"), 1);
+                page = GlobalUtils.converToIntValue(params.get("page"), 1);
                 page = page < 1 ? 1 : page;
-                limit = GlobalUtil.converToIntValue(params.get("pagesize"), GlobalUtil.converToIntValue(params.get("limit"), 20));
+                limit = GlobalUtils.converToIntValue(params.get("pagesize"), GlobalUtils.converToIntValue(params.get("limit"), 20));
                 limit = limit < 1 ? 20 : limit;
                 start = (page - 1) * limit;
                 params.remove("page");
@@ -326,7 +332,7 @@ public class TsMysqlTemplate {
         for (String key : names) {
             Object vobj = params.get(key);
             String istr = null;
-            if (GlobalUtil.isEmpty(vobj)) {
+            if (GlobalUtils.isEmpty(vobj)) {
                 istr = key + " is null";
             } else {
                 istr = key + "=?";
@@ -390,9 +396,9 @@ public class TsMysqlTemplate {
         return ls;
     }
 
-    public List<Map<String, Object>> queryForMapList(String sql, Object[] args) {
-        log.debug("执行SQL:{},{}", sql, args != null ? Arrays.asList(args) : null);
-        return jt.queryForList(sql, args);
+    public List<Map<String, Object>> queryForMapList(String sql, Object... params) {
+        log.debug("执行SQL:{},{}", sql, params != null ? Arrays.asList(params) : null);
+        return jt.queryForList(sql, params);
     }
 
     /**

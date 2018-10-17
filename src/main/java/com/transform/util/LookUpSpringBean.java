@@ -1,4 +1,4 @@
-package com.transform.utils;
+package com.transform.util;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
