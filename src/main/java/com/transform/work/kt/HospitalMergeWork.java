@@ -71,7 +71,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
                 if (area == null) {
                     Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), regCode);
                     if (dcode == null) {
-                        sb.append("地区找不到;");
+                        sb.append("'D_CODE'(CNO:").append(regCode).append(",CVALUE:").append(dcode.get("CVALUE")).append(")不在'uas_base_area'中;");
                     }
                 } else {
                     volVal.put("locate_area", area.get("name"));
@@ -105,8 +105,10 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
                 Map<String, Object> cno = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), supArea + "00");
                 volVal.put("supervise_area", cno.get("CVALUE"));
                 //片区id
-                Map<String, Object> supAreaId = tt.queryFirst(SQL.select("id").from(UAS_SUPERVISE_AREA).where("name like ?").build(), "'" + cno.get("CVALUE") + "%'");
-                volVal.put("supervise_area_id", supAreaId.get("id"));
+                Map<String, Object> supAreaId = tt.queryFirst(SQL.select("id").from(UAS_SUPERVISE_AREA).where("name like ?").build(), cno.get("CVALUE") + "%");
+                if (supAreaId != null) {
+                    volVal.put("supervise_area_id", supAreaId.get("id"));
+                }
             }
             // 医疗机构等级
             Object hosLevel = map.get("HOSPLEVEL");
