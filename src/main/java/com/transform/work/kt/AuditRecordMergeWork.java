@@ -16,21 +16,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 管理单位表迁移合并
- * kt/MCS_COMPANY_INFO + kt/MCS_HOSPITAL_INFO + kt/MCS_REGULATOR_INFO -> hx/uas_org_info
+ * 企业申报审核记录迁移
+ * kt/mcs_company_info_do + mcs_organ_audit -> org_modify_apply
+ * kt/mcs_company_info_his + mcs_organ_audit -> org_modify_apply_his
  * <p>
  * Created by tianhc on 2018/10/16.
  */
 @Slf4j
 @Service
-public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
+public class AuditRecordMergeWork extends AbstractWorker implements MergeWork {
 
     @Override
     public boolean merge() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_REGULATOR_INFO).where("ISDEL = '0'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO).where("ISDEL = '0'").build()).get("count(1)");
         int total = ValChangeUtils.toInteger(obj, null);
         int offset = 0;
-        int limit = LIMIT;
+        int limit = 300;
         log.info("RegulatorMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         // 管理单位表
@@ -79,7 +80,7 @@ public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
                     sb.append("在'uas_supervise_area'中找不到片区：").append(cvalue.substring(0,cvalue.length()-1)).append(";");
                 }
             }
-            volVal.put("supervise_med_org", map.get("HOSPTYPE"));
+            volVal.put("hospital_kind", map.get("HOSPTYPE"));
             volVal.put("fax", map.get("FOX"));
             volVal.put("short_pinyin", map.get("REG_PY"));
             volVal.put("notes", map.get("REMARK"));
@@ -102,9 +103,9 @@ public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);
-            volVal.put("code", "");
             datas.add(volVal);
         }
+        tt.batchInsert(UAS_ORG_INFO, datas);
         List<Long> newIds = tt.batchInsert(UAS_ORG_INFO, datas);
         String hxOrgCode = ServiceCodeGenerator.generateOrgCode(3, newIds.get(0));
         tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));

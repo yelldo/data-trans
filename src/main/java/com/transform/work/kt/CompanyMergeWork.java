@@ -2,6 +2,7 @@ package com.transform.work.kt;
 
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
+import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
@@ -26,10 +27,10 @@ public class CompanyMergeWork extends AbstractWorker implements MergeWork {
 
     @Override
     public boolean merge() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO).where("ISDEL = '0'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
         int total = ValChangeUtils.toInteger(obj, null);
         int offset = 0;
-        int limit = 300;
+        int limit = LIMIT;
         log.info("CompanyMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         // 企业信息表
@@ -38,7 +39,7 @@ public class CompanyMergeWork extends AbstractWorker implements MergeWork {
             dealTotal += jobNum;
             log.info("CompanyMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
             offset += limit;
-            if (offset > total) {
+            if (offset >= total) {
                 break;
             }
         }
@@ -80,7 +81,30 @@ public class CompanyMergeWork extends AbstractWorker implements MergeWork {
             }
             volVal.put("kt_is_province", map.get("ISPROVINCE"));
             volVal.put("contact_address", map.get("ADDRS"));
-            volVal.put("kt_enterprise_type", (map.get("COMPTYPE") + "").substring(0, 1));
+            String compType = (map.get("COMPTYPE") + "").substring(0, 1);
+            // 1.生产企业,2.代理企业,3.配送企业,4.生产及代理,5.生产及配送,6.代理及配送,7.生产,代理及配送
+            String entType = map.get("ENTTYPE") + "";
+            if ("1".equals(compType)) {
+                if ("imported".equals(entType)) {
+                    // 代理企业
+                    volVal.put("enterprise_type", 2);
+                    volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
+                } else if ("domestic".equals(entType)) {
+                    // 生产企业
+                    volVal.put("enterprise_type", 1);
+                    volVal.put("product_cert_file", map.get("FILE_PERMIT"));
+                }
+            } else if ("2".equals(compType)) {
+                // 配送
+                volVal.put("enterprise_type", 3);
+                volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
+            } else if ("3".equals(compType)) {
+                // 生产及配送(暂时在kt耗材联采库中不存在这种类型的)
+                volVal.put("enterprise_type", 5);
+            }
+            volVal.put("kt_enttype", entType);
+            // COMPTYPE
+            volVal.put("kt_enterprise_type", compType);
             volVal.put("kt_licence", map.get("LICENCE"));
             volVal.put("register_funds", map.get("REGCAP"));
             volVal.put("found_date", map.get("ESTDATE"));
@@ -112,42 +136,58 @@ public class CompanyMergeWork extends AbstractWorker implements MergeWork {
             volVal.put("organization_file", map.get("FILE_ORGCODE"));
             volVal.put("buz_licence_file", map.get("FILE_BUSLISCENSE"));
             volVal.put("tax_file", map.get("FILE_TAXREG"));
-            volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
+            //volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
             volVal.put("credit", map.get("SOCIALCODE"));
             volVal.put("kt_combined", map.get("COMBINED"));
             volVal.put("kt_combined_name", map.get("COMBINEDNAME"));
             volVal.put("kt_last_update_cgzx", map.get("LASTUPDATE_CGZX"));
             volVal.put("kt_combined_id", map.get("COMBINEDID"));
-            volVal.put("kt_product_class", map.get("PRODUCT_CLASS"));
+            volVal.put("product_category", map.get("PRODUCT_CLASS"));
             volVal.put("legal_person_idcard_file", map.get("FILE_OWNER"));
             volVal.put("kt_auth_person_idcard_file", map.get("FILE_AUTHORIZED"));
-            volVal.put("kt_insurance_file", map.get("FILE_INSURANCE"));
+            volVal.put("social_insurance_file", map.get("FILE_INSURANCE"));
             volVal.put("other_ref_cert_file", map.get("FILE_OTHER"));
-            volVal.put("kt_instrument_file", map.get("FILE_INSTRUMENT"));
-            volVal.put("kt_instrument_cert_file", map.get("FILE_INSTRUMENTCERT"));
+            volVal.put("authorization_file", map.get("FILE_INSTRUMENT"));
+            volVal.put("authorization_cert_file", map.get("FILE_INSTRUMENTCERT"));
             volVal.put("kt_commitment_file", map.get("FILE_COMMITMENT"));
-            // 审核状态
-            int[] status = new int[]{4, 3, 1, -1, 5};
+            // 审核状态 -1 占位
+            Integer[] status = new Integer[]{4, 3, 1, -1, 0};
             Object auditStatus = map.get("DATA_PASS");
             if (!StrUtils.isBlankOrNullVal(auditStatus)) {
-                volVal.put("audit_status", status[ValChangeUtils.toInteger(auditStatus, null)]);
+                Integer sts = status[ValChangeUtils.toInteger(auditStatus, null)];
+                volVal.put("audit_status", sts == null ? 0 : sts);
             } else {
                 volVal.put("audit_status", 6);
             }
             volVal.put("audit_status", map.get("DATA_PASS"));
             volVal.put("auth_person_idcard", map.get("AUTHORIZED_ID"));
             volVal.put("three_cert_in_one", map.get("IFTHREEINONE"));
-            volVal.put("kt_enttype", map.get("ENTTYPE"));
+
             volVal.put("auth_person_name", map.get("AUTHORIZED_NAME"));
             volVal.put("auth_person_mobile", map.get("AUTHORIZED_TEL"));
             volVal.put("kt_cgzx_notes", map.get("CGZX_REMARK"));
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);
+            volVal.put("code", "");
+            volVal.put("kt_audit_status", map.get("DATA_PASS"));
             datas.add(volVal);
         }
-        tt.batchInsert(UAS_ORG_INFO, datas);
+        List<Long> newIds = tt.batchInsert(UAS_ORG_INFO, datas);
+        String hxOrgCode = ServiceCodeGenerator.generateOrgCode(1, newIds.get(0));
+        tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));
         return ret.size();
+    }
+
+    /**
+     * 合并相同企业名称，不同企业id：
+     * 2配送企业->1生产或代理企业，并删除2配送企业那条数据
+     * 2disrange->1-disrange
+     * 2ent_id->1kt_merged_id
+     * 2ent_type->1kt_merged_type
+     */
+    private void removeDuplicate() {
+
     }
 
 }

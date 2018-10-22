@@ -30,7 +30,7 @@ public class KtTransStartor implements CommandLineRunner {
     public void run(String... strings) throws Exception {
         //supAreaMergeWork.merge();
         //companyMergeWork.merge();
-        hospitalMergeWork.merge();
+        //hospitalMergeWork.merge();
         regulatorMergeWork.merge();
     }
 }

@@ -2,6 +2,7 @@ package com.transform.work.kt;
 
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
+import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
@@ -29,7 +30,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_HOSPITAL_INFO).where("ISDEL = '0'").build()).get("count(1)");
         int total = ValChangeUtils.toInteger(obj, null);
         int offset = 0;
-        int limit = 300;
+        int limit = LIMIT;
         log.info("HospitalMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         // 医疗机构信息表
@@ -38,7 +39,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
             dealTotal += jobNum;
             log.info("HospitalMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
             offset += limit;
-            if (offset > total) {
+            if (offset >= total) {
                 break;
             }
         }
@@ -87,7 +88,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
             volVal.put("create_time", map.get("CREATETIME"));
             volVal.put("modify_time", map.get("LASTUPDATE"));
             volVal.put("kt_data_network", (map.get("DATA_NETWORK") + "").substring(0, 1));
-            // 医疗机构性质
+            // 医疗机构性质 -1 占位
             int[] kinds = new int[]{-1, 1, 2, 5, 4, 3};
             Object hosKind = map.get("HOSPITALTYPE");
             if (!StrUtils.isBlankOrNullVal(hosKind)) {
@@ -130,9 +131,13 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);
+            volVal.put("code", "");
             datas.add(volVal);
         }
-        tt.batchInsert(UAS_ORG_INFO, datas);
+        List<Long> newIds = tt.batchInsert(UAS_ORG_INFO, datas);
+        String hxOrgCode = ServiceCodeGenerator.generateOrgCode(2, newIds.get(0));
+        tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));
+
         return ret.size();
     }
 

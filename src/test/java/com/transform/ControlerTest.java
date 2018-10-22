@@ -1,4 +1,4 @@
-package com.transform.work;
+package com.transform;
 
 import com.alexfu.sqlitequerybuilder.api.SQLiteQueryBuilder;
 import com.alibaba.fastjson.JSONObject;
