@@ -6,7 +6,7 @@ import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
-import com.transform.work.MergeWork;
+import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +23,12 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
+public class RegulatorMergeWork extends AbstractWorker implements Converter {
 
     @Override
-    public boolean merge() {
+    public boolean convert() {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_REGULATOR_INFO).where("ISDEL = '0'").build()).get("count(1)");
-        int total = ValChangeUtils.toInteger(obj, null);
+        int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 0;
         int limit = LIMIT;
         log.info("RegulatorMergeWork 任务开始 ======= total: {}", total);
@@ -58,7 +58,7 @@ public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
             volVal.put("type", 3);
-            volVal.put("kt_org_id", map.get("REG_ID"));
+            volVal.put("kt_org_id", map.get("REGID"));
             volVal.put("name", map.get("REGULATOR"));
             volVal.put("contact_address", map.get("ADDRS"));
             volVal.put("legal_person", map.get("LEREP"));
@@ -99,6 +99,7 @@ public class RegulatorMergeWork extends AbstractWorker implements MergeWork {
                     volVal.put("locate_area", area.get("name"));
                 }
             }
+            volVal.put("audit_status", 3);
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);

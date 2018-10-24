@@ -2,7 +2,6 @@ package com.transform.work.kt;
 
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
-import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
@@ -10,45 +9,43 @@ import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * 企业信息表迁移合并
- * kt/MCS_COMPANY_INFO + kt/MCS_HOSPITAL_INFO + kt/MCS_REGULATOR_INFO -> hx/uas_org_info
+ * 企业申报审核记录迁移
+ * kt/mcs_company_info_do + mcs_organ_audit -> org_modify_apply
+ * kt/mcs_company_info_his + mcs_organ_audit -> org_modify_apply_his
  * <p>
  * Created by tianhc on 2018/10/16.
  */
 @Slf4j
 @Service
-public class CompanyMergeWork extends AbstractWorker implements Converter {
+public class CompanyHisMergeWork extends AbstractWorker implements Converter {
 
     @Override
     public boolean convert() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 0;
-        int limit = LIMIT;
-        log.info("CompanyMergeWork 任务开始 ======= total: {}", total);
+        int limit = 300;
+        log.info("CompanyHisMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
-        // 企业信息表
+        // 企业变更操作历史记录表
         while (true) {
-            int jobNum = companyInfo(offset, limit);
+            int jobNum = batchMerge(offset, limit);
             dealTotal += jobNum;
-            log.info("CompanyMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
+            log.info("CompanyHisMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
             offset += limit;
             if (offset >= total) {
                 break;
             }
         }
-        log.info("CompanyMergeWork 任务结束 =======");
+        log.info("CompanyHisMergeWork 任务结束 =======");
         return true;
     }
 
-    private int companyInfo(int offset, int limit) {
-        String sql = SQL.select("*").from(MCS_COMPANY_INFO).where("ISDEL = '0' and CREATETIME > '2017-11-27'").limit(limit).offset(offset).build();
+    private int batchMerge(int offset, int limit) {
+        String sql = SQL.select("*").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0' and CREATETIME > '2017-11-27'").limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
@@ -57,11 +54,11 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             // 清空内容，复用
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
-            volVal.put("type", 1);
             volVal.put("kt_org_id", map.get("ENT_ID"));
-            //log.info("------------------------------ ENT_ID: {}",map.get("ENT_ID"));
             volVal.put("kt_code", map.get("COMPID"));
             volVal.put("name", map.get("COMPNAME"));
+            volVal.put("type", 1);
+            //log.info("------------------------------ ENT_ID: {}",map.get("ENT_ID"));
             volVal.put("org_short_name", map.get("COMPNAME2"));
             volVal.put("organization_code", map.get("ORGCODE"));
             volVal.put("short_pinyin", map.get("COMPPY"));
@@ -136,7 +133,6 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             volVal.put("organization_file", map.get("FILE_ORGCODE"));
             volVal.put("buz_licence_file", map.get("FILE_BUSLISCENSE"));
             volVal.put("tax_file", map.get("FILE_TAXREG"));
-            //volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
             volVal.put("credit", map.get("SOCIALCODE"));
             volVal.put("kt_combined", map.get("COMBINED"));
             volVal.put("kt_combined_name", map.get("COMBINEDNAME"));
@@ -150,53 +146,55 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             volVal.put("authorization_file", map.get("FILE_INSTRUMENT"));
             volVal.put("authorization_cert_file", map.get("FILE_INSTRUMENTCERT"));
             volVal.put("kt_commitment_file", map.get("FILE_COMMITMENT"));
-            // 审核状态 -1 占位
-            Integer[] status = new Integer[]{4, 3, 1, -1, 0};
-            Object auditStatus = map.get("DATA_PASS");
-            if (!StrUtils.isBlankOrNullVal(auditStatus)) {
-                Integer sts = status[ValChangeUtils.toIntegerIfNull(auditStatus, null)];
-                volVal.put("audit_status", sts == null ? 0 : sts);
-                if (sts != null && sts == 4) {
-                    // 凯特存在脏数据： 存在2家企业： 主状态为0审核不通过，但是audit表的最新记录是4采购中心修改，所以这个算是审核通过吗
-                    Map<String, Object> m = tt.queryFirst(SQL.select("CREATETIME","AUDITSTATUS").from(MCS_ORGAN_AUDIT)//
-                            .where("LINK_ID = ?").orderBy("CREATETIME desc").build(), map.get("ENT_ID"));
-                    if (m != null && "4".equals(map.get("AUDITSTATUS") + "")) {
-                        volVal.put("audit_status", 3);
-                    }
-                }
-            } else {
-                // null的情况
-                volVal.put("audit_status", 0);
-            }
-            volVal.put("audit_status", map.get("DATA_PASS"));
             volVal.put("auth_person_idcard", map.get("AUTHORIZED_ID"));
             volVal.put("three_cert_in_one", map.get("IFTHREEINONE"));
 
             volVal.put("auth_person_name", map.get("AUTHORIZED_NAME"));
             volVal.put("auth_person_mobile", map.get("AUTHORIZED_TEL"));
             volVal.put("kt_cgzx_notes", map.get("CGZX_REMARK"));
+
+            // 关联hx_org_id
+            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ENT_ID"));
+            if (hxOrgId != null) {
+                volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
+                volVal.put("code", hxOrgId.get("code"));
+            } else {
+                //
+                continue;
+            }
+            // 关联状态
+            // 在mcs_organ_audit中查找对应的记录，如有取其AUDITSTATUS
+            // his中记录对应到do表可能存在2条，1条是未审核过的（isaudit=0 待审核）,1条是审核过的（isaudit=1 审核不通过）
+            String orgAuditSql = SQL.select("AUDITSTATUS", "ISAUDIT").from(MCS_ORGAN_AUDIT).where("CHANGEID = ? and ISDEAL = '0'").build();
+            Map<String, Object> orgAuditMap = tt.queryFirst(orgAuditSql, map.get("CHANGEID"));
+            if (orgAuditMap == null) {
+                sb.append("在audit表中找不到his表中对应的记录,CHANGEID:" + map.get("CHANGEID") + ";");
+            }
+            Integer auditStatus2 = ValChangeUtils.toIntegerIfNull(orgAuditMap.get("AUDITSTATUS"), null);
+            switch (auditStatus2) {
+                case 1:
+                    volVal.put("audit_status", 1); // 待审核
+                    break;
+                case 2:
+                    volVal.put("audit_status", 4); // 审核不通过
+                    break;
+                case 3:
+                    volVal.put("audit_status", 3); // 审核通过
+                    break;
+                case 4:
+                    volVal.put("audit_status", 5); // 管理单位修改
+                    break;
+                case 99:
+                    volVal.put("audit_status", 0); // 初始生成
+                    break;
+            }
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);
-            volVal.put("code", "");
-            volVal.put("kt_audit_status", map.get("DATA_PASS"));
             datas.add(volVal);
         }
-        List<Long> newIds = tt.batchInsert(UAS_ORG_INFO, datas);
-        String hxOrgCode = ServiceCodeGenerator.generateOrgCode(1, newIds.get(0));
-        tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));
+        tt.batchInsert(UAS_ORG_INFO_MODIFY_APPLY_HIS, datas);
         return ret.size();
-    }
-
-    /**
-     * 合并相同企业名称，不同企业id：
-     * 2配送企业->1生产或代理企业，并删除2配送企业那条数据
-     * 2disrange->1-disrange
-     * 2ent_id->1kt_merged_id
-     * 2ent_type->1kt_merged_type
-     */
-    private void removeDuplicate() {
-
     }
 
 }

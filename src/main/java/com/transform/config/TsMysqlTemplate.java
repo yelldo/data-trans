@@ -259,6 +259,47 @@ public class TsMysqlTemplate {
         });
     }
 
+    public List<Long> batchUpdate(String table, List<Map<String, Object>> datas) {
+        String sql = "insert into " + table;
+        String cstr = null;
+        String qstr = null;
+        List<String> names = new ArrayList<>();
+        for (Map<String, Object> rec : datas) {
+            for (String key : rec.keySet()) {
+                if (!names.contains(key)) {
+                    names.add(key);
+                }
+            }
+        }
+        for (String key : names) {
+            cstr = cstr == null ? key : (cstr + "," + key);
+            qstr = (qstr == null) ? "?" : (qstr + ",?");
+        }
+        sql = sql + "(" + cstr + ") values(" + qstr + ")";
+        final String cursql = sql;
+        log.debug("执行SQL:{}", sql);
+        return jt.execute(new ConnectionCallback<List<Long>>() {
+            @Override
+            public List<Long> doInConnection(Connection con) throws SQLException, DataAccessException {
+                PreparedStatement pstmt = con.prepareStatement(cursql, new String[]{"id"});
+                int colnum = names.size();
+                for (Map<String, Object> rec : datas) {
+                    for (int i = 0; i < colnum; i++) {
+                        pstmt.setObject(i + 1, rec.get(names.get(i)));
+                    }
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+                ResultSet rs = pstmt.getGeneratedKeys();
+                List<Long> rls = new ArrayList<>();
+                while (rs.next()) {
+                    rls.add(rs.getLong(1));
+                }
+                return rls;
+            }
+        });
+    }
+
     private JSONArray convertToArray(Object obj) {
         if (obj instanceof JSONArray) {
             return (JSONArray) obj;

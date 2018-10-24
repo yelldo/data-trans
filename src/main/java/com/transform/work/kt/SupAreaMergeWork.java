@@ -5,7 +5,7 @@ import com.transform.jdbc.SQL;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
-import com.transform.work.MergeWork;
+import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,10 +20,10 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class SupAreaMergeWork extends AbstractWorker implements MergeWork {
+public class SupAreaMergeWork extends AbstractWorker implements Converter {
 
     @Override
-    public boolean merge() {
+    public boolean convert() {
 
         String countSql = SQL.select("count(1)").from(D_CODE).where("categoryno = '0008'").build();
         int total = Integer.valueOf(tt.queryFirst(countSql).get("count(1)") + "");

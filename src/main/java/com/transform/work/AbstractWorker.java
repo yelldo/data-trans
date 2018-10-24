@@ -18,7 +18,10 @@ public abstract class AbstractWorker {
     protected static final String MCS_REGULATOR_INFO = "mcs_regulator_info";
     protected static final String MCS_COMPANY_INFO_DO = "mcs_company_info_do";
     protected static final String MCS_COMPANY_INFO_DO_HIS = "mcs_company_info_do_his";
-    protected static final String UAS_ORG_INFO = "uas_org_info";
+    protected static final String MCS_ORGAN_AUDIT = "mcs_organ_audit";
+    protected static final String MCS_ATTACH_FILE = "mcs_attachfile";
+    //protected static final String UAS_ORG_INFO = "uas_org_info";
+    protected static final String UAS_ORG_INFO = "uas_org_info_tmp";
     protected static final String UAS_ORG_INFO_MODIFY_APPLY = "uas_org_info_modify_apply";
     protected static final String UAS_ORG_INFO_MODIFY_APPLY_HIS = "uas_org_info_modify_apply_his";
     protected static final String D_CODE = "d_code";

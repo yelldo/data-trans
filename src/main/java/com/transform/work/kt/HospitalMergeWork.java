@@ -6,7 +6,7 @@ import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
-import com.transform.work.MergeWork;
+import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +23,12 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class HospitalMergeWork extends AbstractWorker implements MergeWork {
+public class HospitalMergeWork extends AbstractWorker implements Converter {
 
     @Override
-    public boolean merge() {
+    public boolean convert() {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_HOSPITAL_INFO).where("ISDEL = '0'").build()).get("count(1)");
-        int total = ValChangeUtils.toInteger(obj, null);
+        int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 0;
         int limit = LIMIT;
         log.info("HospitalMergeWork 任务开始 ======= total: {}", total);
@@ -92,7 +92,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
             int[] kinds = new int[]{-1, 1, 2, 5, 4, 3};
             Object hosKind = map.get("HOSPITALTYPE");
             if (!StrUtils.isBlankOrNullVal(hosKind)) {
-                int kind = ValChangeUtils.toInteger(hosKind, null);
+                int kind = ValChangeUtils.toIntegerIfNull(hosKind, null);
                 volVal.put("hospital_kind", kinds[kind]);
             } else {
                 // 其他
@@ -128,6 +128,7 @@ public class HospitalMergeWork extends AbstractWorker implements MergeWork {
             volVal.put("buz_licence_file", map.get("FILE_BUSLISCENSE"));
             volVal.put("tax_file", map.get("FILE_TAXREG"));
             volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
+            volVal.put("audit_status", 3);
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);

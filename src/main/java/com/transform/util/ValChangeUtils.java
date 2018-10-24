@@ -8,13 +8,19 @@ import org.apache.commons.lang3.StringUtils;
 public class ValChangeUtils {
 
     public static Long toLong(Object object, Long defaultVal) {
+        if (object == null) {
+            return defaultVal;
+        }
         if (StringUtils.isBlank(object + "")) {
             return defaultVal;
         }
         return Long.valueOf(object + "");
     }
 
-    public static Integer toInteger(Object object, Integer defaultVal) {
+    public static Integer toIntegerIfNull(Object object, Integer defaultVal) {
+        if (object == null) {
+            return defaultVal;
+        }
         if (StringUtils.isBlank(object + "")) {
             return defaultVal;
         }
