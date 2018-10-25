@@ -54,12 +54,15 @@ mcs_organ_audit 对应记录状态变更 1待审核->2审核不通过
 1.mcs_company_info、mcs_hospital_info、mcs_regulator_info三张表合并到uas_org_info
 2.mcs_organ_audit、mcs_company_info_do 两张表合并到uas_org_info_modify_apply
 3.uas新建一张操作历史记录表 uas_org_info_modify_apply_his,数据由mcs_company_info_do_his同步来
-
 4.在uas_org_info、uas_org_info_modify_apply、uas_org_info_modify_apply_his 表中加图片转化处理标记 isFileConvert(0,false:1,true)
 
 alter table uas_org_info add isFileConvert int(1) default 0;
 alter table uas_org_info_modify_apply add isFileConvert int(1) default 0;
 alter table uas_org_info_modify_apply_his add isFileConvert int(1) default 0;
+
+5.用户表同步:
+直接迁移整张用户视图表 vm_all_user_info
+
 
 
 
