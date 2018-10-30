@@ -49,7 +49,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgInfo 任务开始 ======= total: {}", total);
-        int limit = 100;
+        int limit = 300;
         int offset = 0;
         long dealTotal = 0;
         while (true) {
@@ -64,11 +64,9 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "bus_cert_file",//
                     "other_ref_cert_file",//
                     "auth_person_idcard_file",//
-                    "auth_person_idcard2_file",//
                     "application_file",//
                     "kt_product_cert_file",//
                     "legal_person_idcard_file",//
-                    "kt_auth_person_idcard_file",//
                     "social_insurance_file",//
                     "authorization_file",//
                     "authorization_cert_file",//
@@ -164,7 +162,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgApply 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         int offset = 0;
-        int limit = 100;
+        int limit = 300;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
@@ -179,11 +177,9 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "application_file",//
                     "other_ref_cert_file",//
                     "auth_person_idcard_file",//
-                    "auth_person_idcard2_file",//
                     "license_file",//
                     "kt_product_cert_file",//
                     "legal_person_idcard_file",//
-                    "kt_auth_person_idcard_file",//
                     "social_insurance_file",//
                     "authorization_file",//
                     "authorization_cert_file",//
@@ -225,10 +221,8 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "social_insurance_file",//
                     "other_ref_cert_file",//
                     "auth_person_idcard_file",//
-                    "auth_person_idcard2_file",//
                     "kt_product_cert_file",//
                     "legal_person_idcard_file",//
-                    "kt_auth_person_idcard_file",//
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//

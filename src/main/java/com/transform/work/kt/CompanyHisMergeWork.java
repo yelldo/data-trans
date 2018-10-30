@@ -2,6 +2,7 @@ package com.transform.work.kt;
 
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
+import com.transform.util.ServiceCodeGenerator;
 import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
@@ -24,7 +25,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
 
     @Override
     public boolean convert() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0'").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 9300;
         int limit = 300;
@@ -45,7 +46,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
     }
 
     private int batchMerge(int offset, int limit) {
-        String sql = SQL.select("*").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0' and CREATETIME > '2017-11-27'").limit(limit).offset(offset).build();
+        String sql = SQL.select("*").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0'").limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
@@ -64,17 +65,12 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("short_pinyin", map.get("COMPPY"));
             Object regCode = map.get("REGCODE");
             volVal.put("kt_region_code", regCode);
-            // 所在地区
-            if (!StrUtils.isBlankOrNullVal(regCode)) {
-                Map<String, Object> area = tt.queryFirst(SQL.select("name").from(UAS_BASE_AREA).where("id = ?").build(), regCode);
-                if (area == null) {
-                    Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), regCode);
-                    if (dcode == null) {
-                        sb.append("地区找不到;");
-                    }
-                } else {
-                    volVal.put("locate_area", area.get("name"));
-                }
+            // 地区字段转成 code（如：330000,330100,330103）
+            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode+"",tt);
+            if (locateAreaCode == null) {
+                sb.append("地区找不到;");
+            } else {
+                volVal.put("locate_area", locateAreaCode);
             }
             volVal.put("kt_is_province", map.get("ISPROVINCE"));
             volVal.put("contact_address", map.get("ADDRS"));
