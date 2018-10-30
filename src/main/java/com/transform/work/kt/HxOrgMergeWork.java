@@ -79,7 +79,7 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             // 错误记录
             volVal.put("code", "");
             volVal.put("ts_notes", "CONFIRM_STATUS:"+map.get("CONFIRM_STATUS")+",IS_SMP:"+map.get("IS_SMP"));
-            volVal.put("ts_deal_flag", 1);
+            volVal.put("ts_deal_flag", 2); // 来源于hx公示系统
             datas.add(volVal);
         }
         List<Long> newIds = tt.batchInsert(UAS_ORG_INFO, datas);

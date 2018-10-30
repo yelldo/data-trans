@@ -135,7 +135,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
     }
 
     private int hxUser(int offset, int limit) {
-        String sql = SQL.select("*").from(SYS_N_USERS).limit(limit).offset(offset).build();
+        String sql = SQL.select("*").from(HEC_UPO_PRJ_USER).limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
@@ -184,7 +184,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_is_activation", map.get("IS_ACTIVATION"));
             // 错误记录
             volVal.put("ts_notes", sb.toString());
-            volVal.put("ts_deal_flag", 1);
+            volVal.put("ts_deal_flag", 2);
             datas.add(volVal);
         }
         tt.batchInsert(UAS_ORG_USER, datas);

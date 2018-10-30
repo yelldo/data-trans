@@ -48,10 +48,10 @@ public class ServiceCodeGenerator {
                     return null;
                 }
             } else {
-                String a = area.get("id") == null ? "" : area.get("id") + ",";
+                String a = area.get("id") == null ? "" : area.get("id") + "";
                 String b = area.get("pid") == null ? "" : area.get("pid") + ",";
-                String c = area.get("pid2") == null ? "" : area.get("pid2") + "";
-                return a + b + c;
+                String c = area.get("pid2") == null ? "" : area.get("pid2") + ",";
+                return c + b + a;
             }
         }
         return null;

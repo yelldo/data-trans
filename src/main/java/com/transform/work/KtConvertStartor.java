@@ -35,8 +35,10 @@ public class KtConvertStartor implements CommandLineRunner {
 
     @Override
     public void run(String... strings) throws Exception {
-        // 按顺序执行任务
+        //测试
         //supAreaMergeWork.convert();
+
+        // 按顺序执行任务
         //companyMergeWork.convert();
         //hospitalMergeWork.convert();
         //regulatorMergeWork.convert();

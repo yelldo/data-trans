@@ -25,7 +25,10 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
 
     @Override
     public boolean convert() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)")//
+                .from(MCS_COMPANY_INFO_DO_HIS + " a," + MCS_ORGAN_AUDIT + " b")//
+                .where("b.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
+                .build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 9300;
         int limit = 300;
@@ -44,9 +47,12 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
         log.info("CompanyHisMergeWork 任务结束 =======");
         return true;
     }
-
+    //  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO  mcs_company_info_do_his 和 mcs_organ_audit 关联查询 !!!
     private int batchMerge(int offset, int limit) {
-        String sql = SQL.select("*").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0'").limit(limit).offset(offset).build();
+        String sql = SQL.select("b.AUDITSTATUS,a.*")//
+                .from(MCS_COMPANY_INFO_DO_HIS + " a," + MCS_ORGAN_AUDIT + " b")//
+                .where("b.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
+                .limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
