@@ -70,13 +70,14 @@ public class RegulatorMergeWork extends AbstractWorker implements Converter {
             Object supArea = map.get("AREA");
             if (!StrUtils.isBlankOrNullVal(supArea)) {
                 Map<String, Object> cno = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), supArea + "00");
-                String cvalue = cno.get("CVALUE")+"";
+                String cvalue = cno.get("CVALUE") + "";
                 volVal.put("supervise_area", cvalue);
                 //片区id
                 Map<String, Object> supAreaId = tt.queryFirst(SQL.select("id").from(UAS_SUPERVISE_AREA).where("name like ?").build(), cvalue + "%");
                 if (supAreaId != null) {
                     volVal.put("supervise_area_id", supAreaId.get("id"));
-                    sb.append("在'uas_supervise_area'中找不到片区：").append(cvalue.substring(0,cvalue.length()-1)).append(";");
+                } else {
+                    sb.append("在'uas_supervise_area'中找不到片区：").append(cvalue.substring(0, cvalue.length() - 1)).append(";");
                 }
             }
             volVal.put("supervise_med_org", map.get("HOSPTYPE"));
@@ -87,18 +88,16 @@ public class RegulatorMergeWork extends AbstractWorker implements Converter {
             volVal.put("modify_time", map.get("UPDATETIME"));
             Object regCode = map.get("REGCODE");
             volVal.put("kt_region_code", regCode);
-            // 所在地区
-            if (!StrUtils.isBlankOrNullVal(regCode)) {
-                Map<String, Object> area = tt.queryFirst(SQL.select("name").from(UAS_BASE_AREA).where("id = ?").build(), regCode);
-                if (area == null) {
-                    Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), regCode);
-                    if (dcode == null) {
-                        sb.append("'D_CODE'(CNO:").append(regCode).append(",CVALUE:").append(dcode.get("CVALUE")).append(")不在'uas_base_area'中;");
-                    }
-                } else {
-                    volVal.put("locate_area", area.get("name"));
-                }
+
+            // 地区字段转成 code（如：330000,330100,330103）
+            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode + "", tt);
+            if (locateAreaCode == null) {
+                sb.append("地区找不到;");
+                //sb.append("'D_CODE'(CNO:").append(regCode).append(",CVALUE:").append(dcode.get("CVALUE")).append(")不在'uas_base_area'中;");
+            } else {
+                volVal.put("locate_area", locateAreaCode);
             }
+
             volVal.put("audit_status", 3);
             // 错误记录
             volVal.put("ts_notes", sb.toString());

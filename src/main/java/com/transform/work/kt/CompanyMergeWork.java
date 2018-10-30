@@ -67,8 +67,8 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             volVal.put("short_pinyin", map.get("COMPPY"));
             Object regCode = map.get("REGCODE");
             volVal.put("kt_region_code", regCode);
-            // 所在地区
-            if (!StrUtils.isBlankOrNullVal(regCode)) {
+            // 所在地区 locate_area
+            /*if (!StrUtils.isBlankOrNullVal(regCode)) {
                 Map<String, Object> area = tt.queryFirst(SQL.select("name").from(UAS_BASE_AREA).where("id = ?").build(), regCode);
                 if (area == null) {
                     Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), regCode);
@@ -78,7 +78,15 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
                 } else {
                     volVal.put("locate_area", area.get("name"));
                 }
+            }*/
+            // 地区字段转成 code（如：330000,330100,330103）
+            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode+"",tt);
+            if (locateAreaCode == null) {
+                sb.append("地区找不到;");
+            } else {
+                volVal.put("locate_area", locateAreaCode);
             }
+
             volVal.put("kt_is_province", map.get("ISPROVINCE"));
             volVal.put("contact_address", map.get("ADDRS"));
             String compType = (map.get("COMPTYPE") + "").substring(0, 1);
@@ -159,7 +167,7 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
                 Integer sts = status[ValChangeUtils.toIntegerIfNull(auditStatus, null)];
                 volVal.put("audit_status", sts == null ? 0 : sts);
                 if (sts != null && sts == 4) {
-                    // 凯特存在脏数据： 存在2家企业： 主状态为0审核不通过，但是audit表的最新记录是4采购中心修改，所以这个算是审核通过吗
+                    // 凯特存在脏数据： 存在2家企业： 主状态为0审核不通过，但是audit表的最新记录是4采购中心修改，所以这个算是审核通过吗(当前处理：当做审核通过)
                     Map<String, Object> m = tt.queryFirst(SQL.select("CREATETIME","AUDITSTATUS").from(MCS_ORGAN_AUDIT)//
                             .where("LINK_ID = ?").orderBy("CREATETIME desc").build(), map.get("ENT_ID"));
                     if (m != null && "4".equals(map.get("AUDITSTATUS") + "")) {
@@ -170,7 +178,6 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
                 // null的情况
                 volVal.put("audit_status", 0);
             }
-            volVal.put("audit_status", map.get("DATA_PASS"));
             volVal.put("auth_person_idcard", map.get("AUTHORIZED_ID"));
             volVal.put("three_cert_in_one", map.get("IFTHREEINONE"));
 

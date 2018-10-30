@@ -1,7 +1,6 @@
 package com.transform.work.kt;
 
 import com.alibaba.fastjson.JSONObject;
-import com.transform.exception.TsException;
 import com.transform.jdbc.SQL;
 import com.transform.util.*;
 import com.transform.work.AbstractWorker;
@@ -50,7 +49,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgInfo 任务开始 ======= total: {}", total);
-        int limit = 1;
+        int limit = 100;
         int offset = 0;
         long dealTotal = 0;
         while (true) {
@@ -189,7 +188,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//
-            ).from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
+            ).from(UAS_ORG_INFO_MODIFY_APPLY).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
             for (Map<String, Object> map : lm) {
                 changeFileId(map);
             }
@@ -233,7 +232,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//
-            ).from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
+            ).from(UAS_ORG_INFO_MODIFY_APPLY_HIS).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
             for (Map<String, Object> map : lm) {
                 changeFileId(map);
             }

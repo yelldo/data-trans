@@ -66,18 +66,14 @@ public class HospitalMergeWork extends AbstractWorker implements Converter {
             volVal.put("short_pinyin", map.get("HOSPPY"));
             Object regCode = map.get("REGCODE");
             volVal.put("kt_region_code", regCode);
-            // 所在地区
-            if (!StrUtils.isBlankOrNullVal(regCode)) {
-                Map<String, Object> area = tt.queryFirst(SQL.select("name").from(UAS_BASE_AREA).where("id = ?").build(), regCode);
-                if (area == null) {
-                    Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(D_CODE).where("CNO = ?").build(), regCode);
-                    if (dcode == null) {
-                        sb.append("'D_CODE'(CNO:").append(regCode).append(",CVALUE:").append(dcode.get("CVALUE")).append(")不在'uas_base_area'中;");
-                    }
-                } else {
-                    volVal.put("locate_area", area.get("name"));
-                }
+            // 地区字段转成 code（如：330000,330100,330103）
+            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode+"",tt);
+            if (locateAreaCode == null) {
+                sb.append("地区找不到;");
+            } else {
+                volVal.put("locate_area", locateAreaCode);
             }
+
             volVal.put("contact_address", map.get("ADDRS"));
             volVal.put("hospital_type", map.get("HOSPCAT"));
             volVal.put("link_person", map.get("LINKMAN"));
