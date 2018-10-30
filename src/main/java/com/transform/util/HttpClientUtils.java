@@ -28,9 +28,11 @@ import java.nio.charset.Charset;
 public class HttpClientUtils {
 
     public static void main(String[] args) throws IOException {
-        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1cllhvhdkd8610ms194a180c1oqr27.edc";
+        //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201806/p1cge40iigqs21kdf12ap1n2h7729.edc";
+        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201807/p1cja56tae1ucg1fc01a6v17o1q0do.edc";
         String targetUrl = "http://172.18.30.33:9645/dws/pub/upload";
-        String tmpFilePath = "F:\\yelldo\\tmp\\p1cllhvhdkd8610ms194a180c1oqr27.edc";
+        //String tmpFilePath = "F:\\yelldo\\tmp\\p1cge40iigqs21kdf12ap1n2h7729.edc";
+        String tmpFilePath = "F:\\yelldo\\tmp\\p1cja56tae1ucg1fc01a6v17o1q0do.edc";
         String content = uploadFile(sourceUrl, targetUrl, tmpFilePath);
         System.out.println(content);
         JSONObject json = JSONObject.parseObject(content);
@@ -47,10 +49,12 @@ public class HttpClientUtils {
         HttpGet httpGet = new HttpGet(sourceUrl);
         CloseableHttpResponse resp = httpclient.execute(httpGet);
         try {
-            HttpEntity entity = resp.getEntity();
+            //HttpEntity entity = resp.getEntity();
+            byte[] bytes = EntityUtils.toByteArray(resp.getEntity());
             HttpPost httpPost = new HttpPost(targetUrl);
             File file = new File(tmpFilePath);
-            FileUtils.copyInputStreamToFile(entity.getContent(), file);
+            //FileUtils.copyInputStreamToFile(entity.getContent(), file);
+            FileUtils.writeByteArrayToFile(file,bytes);
             FileBody bin = new FileBody(file);
             StringBody project = new StringBody("uas", ContentType.create("text/plain", Consts.UTF_8));
             StringBody filestore = new StringBody("fs", ContentType.create("text/plain", Consts.UTF_8));
@@ -61,16 +65,18 @@ public class HttpClientUtils {
                     .build();
             httpPost.setEntity(reqEntity);
             resp = httpclient.execute(httpPost);
-            entity = resp.getEntity();
+            HttpEntity entity = resp.getEntity();
             String content = EntityUtils.toString(entity, Charset.forName("UTF-8"));
             EntityUtils.consume(entity);
             return content;
+        } catch (Exception e) {
+            log.warn("文件转换失败，ktFileId:{},errorStack:{}", sourceUrl, e);
         } finally {
             resp.close();
             // 删除临时文件
             deleteFile(tmpFilePath);
         }
-
+        return null;
     }
 
     /**

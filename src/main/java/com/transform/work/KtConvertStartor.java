@@ -23,9 +23,13 @@ public class KtConvertStartor implements CommandLineRunner {
     @Resource
     private RegulatorMergeWork regulatorMergeWork;
     @Resource
+    private HxOrgMergeWork hxOrgMergeWork;
+    @Resource
     private CompanyHisMergeWork companyHisMergeWork;
     @Resource
     private CompanyAuditMergeWork companyAuditMergeWork;
+    @Resource
+    private OrgUserMergeWork orgUserMergeWork;
     @Resource
     private FileIdConvertWork fileIdConvertWork;
 
@@ -36,8 +40,10 @@ public class KtConvertStartor implements CommandLineRunner {
         //companyMergeWork.convert();
         //hospitalMergeWork.convert();
         //regulatorMergeWork.convert();
+        //hxOrgMergeWork.convert();
         //companyHisMergeWork.convert();
         //companyAuditMergeWork.convert();
+        //orgUserMergeWork.convert();
         fileIdConvertWork.convert();
 
     }

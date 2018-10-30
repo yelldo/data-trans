@@ -21,9 +21,10 @@ public abstract class AbstractWorker {
     protected static final String MCS_ORGAN_AUDIT = "mcs_organ_audit";
     protected static final String MCS_ATTACH_FILE = "mcs_attachfile";
     protected static final String HEC_UPO_PRJ_USER = "hec_upo_prj_user";
+    protected static final String HEC_DUP_FM_TENDER_ORG = "hec_dup_fm_tender_org";
     protected static final String SYS_N_USERS = "sys_n_users";
-    //protected static final String UAS_ORG_INFO = "uas_org_info";
-    protected static final String UAS_ORG_INFO = "uas_org_info_tmp";
+    protected static final String UAS_ORG_INFO = "uas_org_info";
+    //protected static final String UAS_ORG_INFO = "uas_org_info_tmp";
     protected static final String UAS_ORG_USER = "uas_org_user";
     protected static final String UAS_ORG_INFO_MODIFY_APPLY = "uas_org_info_modify_apply";
     protected static final String UAS_ORG_INFO_MODIFY_APPLY_HIS = "uas_org_info_modify_apply_his";

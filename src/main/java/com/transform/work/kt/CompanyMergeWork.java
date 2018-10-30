@@ -144,13 +144,15 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_combined_id", map.get("COMBINEDID"));
             volVal.put("product_category", map.get("PRODUCT_CLASS"));
             volVal.put("legal_person_idcard_file", map.get("FILE_OWNER"));
-            volVal.put("kt_auth_person_idcard_file", map.get("FILE_AUTHORIZED"));
+            volVal.put("auth_person_idcard_file", map.get("FILE_AUTHORIZED"));
             volVal.put("social_insurance_file", map.get("FILE_INSURANCE"));
             volVal.put("other_ref_cert_file", map.get("FILE_OTHER"));
             volVal.put("authorization_file", map.get("FILE_INSTRUMENT"));
             volVal.put("authorization_cert_file", map.get("FILE_INSTRUMENTCERT"));
             volVal.put("kt_commitment_file", map.get("FILE_COMMITMENT"));
             // 审核状态 -1 占位
+            // mcs_company_info:data_pass:null未申报,0审核不通过，1审核通过，2待审核，4待提交
+            // uas_org_info:audit_status:0.初始化,1.待审核,3.审核通过,4.审核不通过
             Integer[] status = new Integer[]{4, 3, 1, -1, 0};
             Object auditStatus = map.get("DATA_PASS");
             if (!StrUtils.isBlankOrNullVal(auditStatus)) {

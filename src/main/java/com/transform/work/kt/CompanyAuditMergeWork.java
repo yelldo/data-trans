@@ -172,7 +172,6 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_combined_id", map.get("COMBINEDID"));
             volVal.put("product_category", map.get("PRODUCT_CLASS"));
             volVal.put("legal_person_idcard_file", map.get("FILE_OWNER"));
-            volVal.put("kt_auth_person_idcard_file", map.get("FILE_AUTHORIZED"));
             volVal.put("social_insurance_file", map.get("FILE_INSURANCE"));
             volVal.put("other_ref_cert_file", map.get("FILE_OTHER"));
             volVal.put("authorization_file", map.get("FILE_INSTRUMENT"));

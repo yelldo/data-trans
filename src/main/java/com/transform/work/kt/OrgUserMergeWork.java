@@ -82,10 +82,11 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 清空内容，复用
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
+            volVal.put("kt_org_id", map.get("ORGANID"));
             volVal.put("kt_opno", map.get("OPNO"));
             volVal.put("realname", map.get("OPNAME"));
             volVal.put("kt_pki", map.get("PKI"));
-            volVal.put("userpwd", map.get("PWD"));
+            volVal.put("userpwd", map.get("PASSWORD") == null ? "" : map.get("PWD"));
             volVal.put("create_time", map.get("CREATETIME"));
             volVal.put("last_login_ip", map.get("LASTLOGINIP"));
             volVal.put("latest_login_time", map.get("ACTIVETIME"));
@@ -122,7 +123,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_unitid_id", map.get("UNITID")); //UNITID和ORGANID什么区别
             volVal.put("link_man", map.get("LINKMAIN"));
             volVal.put("link_tel", map.get("LINKMAIN"));
-            volVal.put("ca_cert", map.get("CERNO"));
+            //volVal.put("ca_cert", map.get("CERNO")); // kt不提供ca证书序列号
             volVal.put("kt_is_business", map.get("ISBUSINESS"));
             // 错误记录
             volVal.put("ts_notes", sb.toString());
@@ -143,9 +144,10 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 清空内容，复用
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
+            volVal.put("kt_org_id", map.get("ORGANID"));
             volVal.put("kt_opno", map.get("ID"));
             volVal.put("realname", map.get("USER_NAME"));
-            volVal.put("userpwd", map.get("PASSWORD"));
+            volVal.put("userpwd", map.get("PASSWORD") == null ? "" : map.get("PASSWORD"));
             volVal.put("username", map.get("ACCOUNT"));
             // 关联机构id
             Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));

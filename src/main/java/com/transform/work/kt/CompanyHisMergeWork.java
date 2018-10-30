@@ -26,7 +26,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
     public boolean convert() {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO_DO_HIS).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
-        int offset = 0;
+        int offset = 9300;
         int limit = 300;
         log.info("CompanyHisMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
@@ -140,7 +140,6 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_combined_id", map.get("COMBINEDID"));
             volVal.put("product_category", map.get("PRODUCT_CLASS"));
             volVal.put("legal_person_idcard_file", map.get("FILE_OWNER"));
-            volVal.put("kt_auth_person_idcard_file", map.get("FILE_AUTHORIZED"));
             volVal.put("social_insurance_file", map.get("FILE_INSURANCE"));
             volVal.put("other_ref_cert_file", map.get("FILE_OTHER"));
             volVal.put("authorization_file", map.get("FILE_INSTRUMENT"));
@@ -169,24 +168,26 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             Map<String, Object> orgAuditMap = tt.queryFirst(orgAuditSql, map.get("CHANGEID"));
             if (orgAuditMap == null) {
                 sb.append("在audit表中找不到his表中对应的记录,CHANGEID:" + map.get("CHANGEID") + ";");
-            }
-            Integer auditStatus2 = ValChangeUtils.toIntegerIfNull(orgAuditMap.get("AUDITSTATUS"), null);
-            switch (auditStatus2) {
-                case 1:
-                    volVal.put("audit_status", 1); // 待审核
-                    break;
-                case 2:
-                    volVal.put("audit_status", 4); // 审核不通过
-                    break;
-                case 3:
-                    volVal.put("audit_status", 3); // 审核通过
-                    break;
-                case 4:
-                    volVal.put("audit_status", 5); // 管理单位修改
-                    break;
-                case 99:
-                    volVal.put("audit_status", 0); // 初始生成
-                    break;
+                volVal.put("audit_status", 9); // 有问题的记录
+            }else{
+                Integer auditStatus2 = ValChangeUtils.toIntegerIfNull(orgAuditMap.get("AUDITSTATUS"), null);
+                switch (auditStatus2) {
+                    case 1:
+                        volVal.put("audit_status", 1); // 待审核
+                        break;
+                    case 2:
+                        volVal.put("audit_status", 4); // 审核不通过
+                        break;
+                    case 3:
+                        volVal.put("audit_status", 3); // 审核通过
+                        break;
+                    case 4:
+                        volVal.put("audit_status", 5); // 管理单位修改
+                        break;
+                    case 99:
+                        volVal.put("audit_status", 0); // 初始生成
+                        break;
+                }
             }
             // 错误记录
             volVal.put("ts_notes", sb.toString());
