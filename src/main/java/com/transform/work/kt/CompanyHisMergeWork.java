@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 /**
- * 企业申报审核记录迁移
- * kt/mcs_company_info_do + mcs_organ_audit -> org_modify_apply
- * kt/mcs_company_info_his + mcs_organ_audit -> org_modify_apply_his
+ * 企业历次审核记录
+ * mcs_company_info_do_his a 和 mcs_organ_audit b 关联查询
+ * a.ENT_ID = B.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID = b.CHANGEID
  * <p>
  * Created by tianhc on 2018/10/16.
  */
@@ -27,10 +27,10 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
     public boolean convert() {
         Object obj = tt.queryFirst(SQL.select("count(1)")//
                 .from(MCS_COMPANY_INFO_DO_HIS + " a," + MCS_ORGAN_AUDIT + " b")//
-                .where("b.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
+                .where("a.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
                 .build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
-        int offset = 9300;
+        int offset = 0;
         int limit = 300;
         log.info("CompanyHisMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
@@ -51,7 +51,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
     private int batchMerge(int offset, int limit) {
         String sql = SQL.select("b.AUDITSTATUS,a.*")//
                 .from(MCS_COMPANY_INFO_DO_HIS + " a," + MCS_ORGAN_AUDIT + " b")//
-                .where("b.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
+                .where("a.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
                 .limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
@@ -70,7 +70,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("organization_code", map.get("ORGCODE"));
             volVal.put("short_pinyin", map.get("COMPPY"));
             Object regCode = map.get("REGCODE");
-            volVal.put("kt_region_code", regCode);
+            //volVal.put("kt_region_code", regCode); // TODO 删除hx表字段
             // 地区字段转成 code（如：330000,330100,330103）
             String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode+"",tt);
             if (locateAreaCode == null) {
@@ -103,7 +103,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             }
             volVal.put("kt_enttype", entType);
             // COMPTYPE
-            volVal.put("kt_enterprise_type", compType);
+            //volVal.put("kt_enterprise_type", compType); // TODO  删除hx表字段
             volVal.put("kt_licence", map.get("LICENCE"));
             volVal.put("register_funds", map.get("REGCAP"));
             volVal.put("found_date", map.get("ESTDATE"));
@@ -129,7 +129,6 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
                     volVal.put("kt_dis_range", disRange + "00");
                 }
             }
-            volVal.put("kt_dis_range", map.get("DISRANGE"));
             volVal.put("kt_bak_link_person", map.get("LINKMAN2"));
             volVal.put("kt_bak_link_person_mobile", map.get("TEL2"));
             volVal.put("organization_file", map.get("FILE_ORGCODE"));
@@ -149,7 +148,6 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_commitment_file", map.get("FILE_COMMITMENT"));
             volVal.put("auth_person_idcard", map.get("AUTHORIZED_ID"));
             volVal.put("three_cert_in_one", map.get("IFTHREEINONE"));
-
             volVal.put("auth_person_name", map.get("AUTHORIZED_NAME"));
             volVal.put("auth_person_mobile", map.get("AUTHORIZED_TEL"));
             volVal.put("kt_cgzx_notes", map.get("CGZX_REMARK"));
@@ -160,13 +158,40 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
                 volVal.put("code", hxOrgId.get("code"));
             } else {
-                //
+                // 如果找不到对应的id，跳过不处理，以已经导入到uas_org_info表中的机构为准
                 continue;
             }
+
+            // 审核状态转换
+            // kt: 1、待审核 2、审核不通过 3、 审核通过 4 、采购中心修改 99、初始生成
+            // hx: 0:初始化,1:待审核,3:审核通过,4:审核不通过,5:管理单位修改
+            Integer auditStatus2 = ValChangeUtils.toIntegerIfNull(map.get("AUDITSTATUS"), null);
+            switch (auditStatus2) {
+                case 1:
+                    volVal.put("audit_status", 1); // 待审核
+                    break;
+                case 2:
+                    volVal.put("audit_status", 4); // 审核不通过
+                    break;
+                case 3:
+                    volVal.put("audit_status", 3); // 审核通过
+                    break;
+                case 4:
+                    volVal.put("audit_status", 5); // 管理单位修改
+                    break;
+                case 99:
+                    volVal.put("audit_status", 0); // 初始生成
+                    break;
+                default:
+                    sb.append("来源数据的AUDITSTATUS为空;");
+                    volVal.put("audit_status", 0); // 初始生成
+                    break;
+            }
+
             // 关联状态
             // 在mcs_organ_audit中查找对应的记录，如有取其AUDITSTATUS
             // his中记录对应到do表可能存在2条，1条是未审核过的（isaudit=0 待审核）,1条是审核过的（isaudit=1 审核不通过）
-            String orgAuditSql = SQL.select("AUDITSTATUS", "ISAUDIT").from(MCS_ORGAN_AUDIT).where("CHANGEID = ? and ISDEAL = '0'").build();
+            /*String orgAuditSql = SQL.select("AUDITSTATUS", "ISAUDIT").from(MCS_ORGAN_AUDIT).where("CHANGEID = ? and ISDEAL = '0'").build();
             Map<String, Object> orgAuditMap = tt.queryFirst(orgAuditSql, map.get("CHANGEID"));
             if (orgAuditMap == null) {
                 sb.append("在audit表中找不到his表中对应的记录,CHANGEID:" + map.get("CHANGEID") + ";");
@@ -190,7 +215,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
                         volVal.put("audit_status", 0); // 初始生成
                         break;
                 }
-            }
+            }*/
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);

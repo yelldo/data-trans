@@ -63,14 +63,18 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             Object orgType = map.get("ORG_TYPE");
             // kt:  1生产企业、2代理企业、3生产及代理企业，4 配送机构
             // hx:  1.生产企业,2.代理企业,3.配送企业,4.生产及代理,5.生产及配送,6.代理及配送,7.生产,代理及配送
-            if (orgType != null && orgType.toString().toLowerCase().equals("null")) {
+            if (orgType != null && !orgType.toString().toLowerCase().equals("null")) {
+                // -1 占位
                 int[] ss = {-1,1,2,4,3};
                 volVal.put("type", ss[ValChangeUtils.toIntegerIfNull(orgType,0)]);
             } else {
+                // 如果企业类型是空的，表示无效的数据
                 continue;
             }
+            // kt: 企业资质审核状态：0审核不通过，1审核通过，2待审核，3未提交，4审核中
+            // hx: 0:初始化,1:待审核,3:审核通过,4:审核不通过
             Object auditStatus = map.get("ORGDECL_STATUS")+"";
-            if (auditStatus != null && auditStatus.toString().toLowerCase().equals("null")) {
+            if (auditStatus != null && !auditStatus.toString().toLowerCase().equals("null")) {
                 int[] ss = {4,3,1,0,1};
                 volVal.put("audit_status", ss[ValChangeUtils.toIntegerIfNull(auditStatus,0)]);
             }
@@ -78,7 +82,15 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             volVal.put("modify_time", map.get("MODIFY_TIME"));
             // 错误记录
             volVal.put("code", "");
-            volVal.put("ts_notes", "CONFIRM_STATUS:"+map.get("CONFIRM_STATUS")+",IS_SMP:"+map.get("IS_SMP"));
+            // 管理资质审核状态：0审核不通过，1审核通过，2待审核，3未提交，4审核中
+            volVal.put("kt_orgmag_status", map.get("ORGMAG_STATUS"));
+            // 是否配送企业：1是，0否
+            volVal.put("kt_is_distribution", map.get("IS_DISTRIBUTION"));
+            // 确认状态：0 未确认， 1未确认
+            volVal.put("kt_confirm_status", map.get("CONFIRM_STATUS"));
+            // 是否SMP同步：0否，1是，2挂网环节新增机构
+            volVal.put("kt_is_smp", map.get("IS_SMP"));
+            volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 2); // 来源于hx公示系统
             datas.add(volVal);
         }
@@ -88,17 +100,6 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));
         }
         return ret.size();
-    }
-
-    /**
-     * 合并相同企业名称，不同企业id：
-     * 2配送企业->1生产或代理企业，并删除2配送企业那条数据
-     * 2disrange->1-disrange
-     * 2ent_id->1kt_merged_id
-     * 2ent_type->1kt_merged_type
-     */
-    private void removeDuplicate() {
-
     }
 
 }

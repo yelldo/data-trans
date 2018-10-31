@@ -185,6 +185,9 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
             if (hxOrgId != null) {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"),null));
                 volVal.put("code", hxOrgId.get("code"));
+            }else{
+                // 关联不上就跳过
+                continue;
             }
             // 错误记录
             volVal.put("ts_notes", sb.toString());

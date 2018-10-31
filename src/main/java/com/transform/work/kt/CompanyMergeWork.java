@@ -90,6 +90,14 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_is_province", map.get("ISPROVINCE"));
             volVal.put("contact_address", map.get("ADDRS"));
             String compType = (map.get("COMPTYPE") + "").substring(0, 1);
+            /*
+            * 企业类型转换规则：
+            * COMPTYPE 1，ENTTYPE imported -> 2 代理企业
+            * COMPTYPE 1，ENTTYPE domestic -> 1 生产企业
+            * COMPTYPE 2                   -> 3 配送企业
+            * COMPTYPE 3                   -> 5 生产及配送
+            *
+            * */
             // 1.生产企业,2.代理企业,3.配送企业,4.生产及代理,5.生产及配送,6.代理及配送,7.生产,代理及配送
             String entType = map.get("ENTTYPE") + "";
             if ("1".equals(compType)) {
