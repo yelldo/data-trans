@@ -56,7 +56,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(HEC_UPO_PRJ_USER).build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 0;
-        int limit = LIMIT;
+        int limit = 300;
         log.info("OrgUserMergeWork-hxUserConvert 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         // 管理单位表
@@ -73,6 +73,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
     }
 
     private int ktUser(int offset, int limit) {
+        //String sql = SQL.select("*").from(SYS_N_USERS).limit(limit).offset(offset).build();
         String sql = SQL.select("*").from(SYS_N_USERS).limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
@@ -86,7 +87,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_opno", map.get("OPNO"));
             volVal.put("realname", map.get("OPNAME"));
             volVal.put("kt_pki", map.get("PKI"));
-            volVal.put("userpwd", map.get("PASSWORD") == null ? "" : map.get("PWD"));
+            volVal.put("userpwd", map.get("PWD"));
             volVal.put("create_time", map.get("CREATETIME"));
             volVal.put("last_login_ip", map.get("LASTLOGINIP"));
             volVal.put("latest_login_time", map.get("ACTIVETIME"));
@@ -94,9 +95,10 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_pre_login_ip", map.get("PREVLOGINIP"));
             volVal.put("kt_pre_login_time", map.get("PREVLOGINTIME"));
             volVal.put("kt_op_limit", map.get("OPLIMIT"));
-            if ("0".equals(map.get("ENABLED"))) {
+            Integer enabled = ValChangeUtils.toIntegerIfNull(map.get("ENABLED"), -1);
+            if (enabled == 0) {
                 volVal.put("status", 2);
-            } else if ("1".equals(map.get("ENABLED"))) {
+            } else if (enabled == 1) {
                 volVal.put("status", 1);
             } else {
                 // 如果不是1或2，则标注为不可用
@@ -106,14 +108,15 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_secrecy", map.get("SECRECY"));
             volVal.put("kt_op_type", map.get("OPTYPE")); // 表中没有说明各个值分别表示什么？？？
             volVal.put("loginmode", 1); // kt迁移过来的用户都标记为1均可的登录方式
-            volVal.put("username", map.get("OPACCOUNT"));
+            // 如果账号为空，则取用户名称
+            volVal.put("username", map.get("OPACCOUNT") == null ? map.get("OPNAME") : map.get("OPACCOUNT"));
             volVal.put("general_name", map.get("OPACCOUNT2"));
             volVal.put("email", map.get("EMAIL"));
             volVal.put("modify_time", map.get("LASTUPDATE"));
             volVal.put("kt_data_network", (map.get("DATA_NETWORK") + "").substring(0, 1));
             //volVal.put("primary_account", map.get("ISMAIN")); //????????? TODO
             // 关联机构id
-            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORGANID"));
+            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORGANID"));
             if (hxOrgId != null) {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
             } else {
@@ -122,7 +125,8 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             }
             volVal.put("kt_unitid_id", map.get("UNITID")); //UNITID和ORGANID什么区别
             volVal.put("link_man", map.get("LINKMAIN"));
-            volVal.put("link_tel", map.get("LINKMAIN"));
+            volVal.put("link_tel", map.get("LINKTEL"));
+            volVal.put("mobile", map.get("LINKTEL"));
             //volVal.put("ca_cert", map.get("CERNO")); // kt不提供ca证书序列号
             volVal.put("kt_is_business", map.get("ISBUSINESS"));
             // 错误记录
@@ -144,13 +148,15 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 清空内容，复用
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
-            volVal.put("kt_org_id", map.get("ORGANID"));
+            volVal.put("kt_org_id", map.get("ORG_ID"));
             volVal.put("kt_opno", map.get("ID"));
+            // 如果账号为空，则取用户名称
+            volVal.put("username", map.get("ACCOUNT") == null ? map.get("USER_NAME") : map.get("ACCOUNT"));
             volVal.put("realname", map.get("USER_NAME"));
-            volVal.put("userpwd", map.get("PASSWORD") == null ? "" : map.get("PASSWORD"));
-            volVal.put("username", map.get("ACCOUNT"));
+            volVal.put("userpwd", map.get("PASSWORD"));
+
             // 关联机构id
-            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));
+            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));
             if (hxOrgId != null) {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
             } else {
@@ -158,30 +164,37 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
                 continue;
             }
             volVal.put("email", map.get("EMAIL"));
-            //状态（1:启用,2:禁用,3:删除）
-            if ("0".equals(map.get("ENABLED"))) {
+
+            //状态（1:启用,0:禁用）
+            Integer enabled = ValChangeUtils.toIntegerIfNull(map.get("STATUS"), -1);
+            if (enabled == 0) {
                 volVal.put("status", 2);
-            } else if ("1".equals(map.get("ENABLED"))) {
+            } else if (enabled == 1) {
                 volVal.put("status", 1);
-            } else if ("3".equals(map.get("ENABLED"))) {
-                continue;
             } else {
                 // 其他状态标注为不可用
                 volVal.put("status", 2);
             }
+            volVal.put("mobile", map.get("PHONE"));
             volVal.put("create_time", map.get("CREATE_TIME"));
             volVal.put("modify_time", map.get("MODIFY_TIME"));
             volVal.put("latest_login_time", map.get("LAST_LOGIN_TIME"));
             volVal.put("last_login_ip", map.get("LAST_LOGIN_IP"));
             volVal.put("kt_op_type", map.get("USER_TYPE")); // 表中没有说明各个值分别表示什么？？？
             volVal.put("kt_project_id", map.get("PROJECT_ID"));
-            int[] lmStatus = {1,2,3};
-            volVal.put("loginmode", lmStatus[ValChangeUtils.toIntegerIfNull(map.get("LOGIN_TYPE"),0)]); // kt迁移过来的用户都标记为1均可的登录方式
+            //kt: 登录方式：0 均可，1 普通登录，2 CA登录
+            //hx: 登录方式（1:均可用,2:账号登录,3:CA登录）
+            int[] lmStatus = {1, 2, 3};
+            volVal.put("loginmode", lmStatus[ValChangeUtils.toIntegerIfNull(map.get("LOGIN_TYPE"), 0)]);
             volVal.put("general_name", map.get("OPACCOUNT2"));
-            int[] paStatus = {2,1,3};
-            volVal.put("primary_account", paStatus[ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"),null)]); //????????? TODO
+            // 2 系统管理员，1 企业主帐号，0 企业子帐号
+            // 1:主账号,2:子账号,3:管理员（kt）
+            int[] paStatus = {2, 1, 3};
+            volVal.put("primary_account", paStatus[ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"), -1)]);
             volVal.put("link_tel", map.get("PHONE"));
             volVal.put("kt_is_activation", map.get("IS_ACTIVATION"));
+            volVal.put("reasons_disable", map.get("REASONS_DISABLE"));
+            volVal.put("kt_private_key", map.get("PRIVATE_KEY"));
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 2);

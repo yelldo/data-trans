@@ -43,10 +43,10 @@ public class KtConvertStartor implements CommandLineRunner {
         //hospitalMergeWork.convert();
         //regulatorMergeWork.convert();
         //hxOrgMergeWork.convert();
-        //companyHisMergeWork.convert();
+        orgUserMergeWork.convert();
         //companyAuditMergeWork.convert();
-        //orgUserMergeWork.convert();
-        fileIdConvertWork.convert();
+        //companyHisMergeWork.convert();
+        //fileIdConvertWork.convert();
 
     }
 }

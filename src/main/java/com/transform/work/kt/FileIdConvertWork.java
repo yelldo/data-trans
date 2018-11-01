@@ -73,7 +73,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "kt_commitment_file"//
             ).from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
             for (Map<String, Object> map : lm) {
-                changeFileId(map);
+                changeFileId(map, UAS_ORG_INFO);
             }
             int jobNum = lm.size();
             dealTotal += jobNum;
@@ -86,9 +86,9 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgInfo 任务结束 =======");
     }
 
-    private int changeFileId(Map<String, Object> fileIdMap) {
+    private int changeFileId(Map<String, Object> fileIdMap, String table) {
         StringBuilder sbuild = new StringBuilder();
-        sbuild.append("update ").append(UAS_ORG_INFO).append(" set ");
+        sbuild.append("update ").append(table).append(" set ");
         // 处理的记录主键
         Long recordId = null;
         for (Map.Entry<String, Object> entry : fileIdMap.entrySet()) {
@@ -162,7 +162,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgApply 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         int offset = 0;
-        int limit = 300;
+        int limit = 1;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
@@ -186,7 +186,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "kt_commitment_file"//
             ).from(UAS_ORG_INFO_MODIFY_APPLY).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
             for (Map<String, Object> map : lm) {
-                changeFileId(map);
+                changeFileId(map, UAS_ORG_INFO_MODIFY_APPLY);
             }
             int jobNum = lm.size();
             dealTotal += jobNum;
@@ -228,7 +228,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "kt_commitment_file"//
             ).from(UAS_ORG_INFO_MODIFY_APPLY_HIS).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
             for (Map<String, Object> map : lm) {
-                changeFileId(map);
+                changeFileId(map, UAS_ORG_INFO_MODIFY_APPLY_HIS);
             }
             int jobNum = lm.size();
             dealTotal += jobNum;

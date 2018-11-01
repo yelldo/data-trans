@@ -120,8 +120,9 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             }
             volVal.put("kt_enttype", entType);
             // COMPTYPE
-            volVal.put("kt_enterprise_type", compType);
-            volVal.put("kt_licence", map.get("LICENCE"));
+            //volVal.put("kt_enterprise_type", compType);
+            //volVal.put("kt_licence", map.get("LICENCE"));
+            volVal.put("business_cert_num", map.get("LICENCE"));
             volVal.put("register_funds", map.get("REGCAP"));
             volVal.put("found_date", map.get("ESTDATE"));
             volVal.put("business_end_time", map.get("ENDDATE"));

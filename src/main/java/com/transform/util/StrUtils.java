@@ -1,5 +1,6 @@
 package com.transform.util;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -50,6 +51,15 @@ public class StrUtils {
     public static void main(String[] args) {
         //SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         //System.out.println(sdf.format(new Date(1540454373)));
+        // 密码，采用md5加密=md5(md5(opno) + md5(密码))
+        // 1b6117cae481dcd2cfe21aecb3185c55
+        // 1b6117cae481dcd2cfe21aecb3185c55
+
+        //String opno = DigestUtils.md5Hex("64758F8BFA7E11B2E05346681BAC26B7");
+        //String realPwd = DigestUtils.md5Hex("asd123");
+        //System.out.println(DigestUtils.md5Hex(opno+realPwd));
+
+        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("76AF3A5289D698DFE05346681BACE3ED") + DigestUtils.md5Hex("hx123456")));
     }
 
 

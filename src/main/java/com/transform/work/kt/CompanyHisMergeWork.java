@@ -47,9 +47,9 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
         log.info("CompanyHisMergeWork 任务结束 =======");
         return true;
     }
-    //  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO  mcs_company_info_do_his 和 mcs_organ_audit 关联查询 !!!
+
     private int batchMerge(int offset, int limit) {
-        String sql = SQL.select("b.AUDITSTATUS,a.*")//
+        String sql = SQL.select("b.AUDITSTATUS,b.CREATETIME as AUDITTIME,b.AUDITUSER_NAME,b.AUDITUSER_ID,b.AUDITOPINION,b.USER_ID as APPLYID,a.*")//
                 .from(MCS_COMPANY_INFO_DO_HIS + " a," + MCS_ORGAN_AUDIT + " b")//
                 .where("a.ISDEL = '0' and a.ENT_ID=b.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID=b.CHANGEID")//
                 .limit(limit).offset(offset).build();
@@ -72,7 +72,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             Object regCode = map.get("REGCODE");
             //volVal.put("kt_region_code", regCode); // TODO 删除hx表字段
             // 地区字段转成 code（如：330000,330100,330103）
-            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode+"",tt);
+            String locateAreaCode = ServiceCodeGenerator.generateLocateAreaCode(regCode + "", tt);
             if (locateAreaCode == null) {
                 sb.append("地区找不到;");
             } else {
@@ -104,7 +104,8 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_enttype", entType);
             // COMPTYPE
             //volVal.put("kt_enterprise_type", compType); // TODO  删除hx表字段
-            volVal.put("kt_licence", map.get("LICENCE"));
+            //volVal.put("kt_licence", map.get("LICENCE"));
+            volVal.put("business_cert_num", map.get("LICENCE"));
             volVal.put("register_funds", map.get("REGCAP"));
             volVal.put("found_date", map.get("ESTDATE"));
             volVal.put("business_end_time", map.get("ENDDATE"));
@@ -115,8 +116,8 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("email", map.get("EMAIL"));
             volVal.put("postal_code", map.get("POSTCODE"));
             volVal.put("notes", map.get("REMARK"));
-            volVal.put("create_time", map.get("CREATETIME"));
-            volVal.put("modify_time", map.get("LASTUPDATE"));
+            volVal.put("create_time", map.get("AUDITTIME"));
+            volVal.put("modify_time", map.get("AUDITTIME"));
             volVal.put("oversea", map.get("ISHOME"));
             volVal.put("kt_data_network", (map.get("DATA_NETWORK") + "").substring(0, 1));
             volVal.put("product_cert_end_date", map.get("REGNOENDDATE"));
@@ -153,7 +154,7 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_cgzx_notes", map.get("CGZX_REMARK"));
 
             // 关联hx_org_id
-            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ENT_ID"));
+            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ENT_ID"));
             if (hxOrgId != null) {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
                 volVal.put("code", hxOrgId.get("code"));
@@ -186,6 +187,18 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
                     sb.append("来源数据的AUDITSTATUS为空;");
                     volVal.put("audit_status", 0); // 初始生成
                     break;
+            }
+
+            // 审核信息
+            volVal.put("audit_time", map.get("AUDITTIME"));
+            volVal.put("audit_person", map.get("AUDITUSER_NAME"));
+            volVal.put("kt_audit_person_id", map.get("AUDITUSER_ID"));
+            volVal.put("audit_desc", map.get("AUDITOPINION"));
+            volVal.put("kt_apply_person_id", map.get("APPLYID"));
+            // 审核账号
+            Map<String, Object> auditAccount = tt.queryFirst(SQL.select("username").from(UAS_ORG_USER).where("kt_opno = ?").build(), map.get("APPLYID"));
+            if (auditAccount != null) {
+                volVal.put("audit_account", map.get("username"));
             }
 
             // 关联状态

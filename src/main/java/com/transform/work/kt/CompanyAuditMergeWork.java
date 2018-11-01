@@ -28,7 +28,7 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
 
     @Override
     public boolean convert() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO).where("ISDEL = '0'").build()).get("count(1)");
+        Object obj = tt.queryFirst(SQL.select("count(1)").from(MCS_COMPANY_INFO).where("ISDEL = '0' and CREATETIME > '2017-11-27'").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, null);
         int offset = 0;
         int limit = 300;
@@ -49,12 +49,13 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
     }
 
     private int batchMerge(int offset, int limit) {
-        String sql = SQL.select("*").from(MCS_COMPANY_INFO).where("ISDEL = '0'").limit(limit).offset(offset).build();
+        String sql = SQL.select("*").from(MCS_COMPANY_INFO).where("ISDEL = '0' and CREATETIME > '2017-11-27'").limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
         StringBuilder sb = new StringBuilder();
         for (Map<String, Object> map : ret) {
+            Object ent_id = map.get("ENT_ID");
             //log.info("------------------------------ ENT_ID: {}",map.get("ENT_ID"));
             // 清空内容，复用
             sb.delete(0, sb.length());
@@ -88,6 +89,18 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
                 map = tt.queryFirst(SQL.select("*").from(MCS_COMPANY_INFO_DO).where("ENT_ID = ?").build(), map.get("ENT_ID"));
                 volVal.put("audit_status", 5);
             }
+
+            // 审核信息
+            Map<String, Object> auditRecord = tt.queryFirst(SQL.select("*")//
+                    .from(MCS_ORGAN_AUDIT).where("LINK_ID = ? order by CREATETIME desc").build(), ent_id);
+            if (auditRecord != null) {
+                volVal.put("audit_time", map.get("CREATETIME"));
+                volVal.put("audit_person", map.get("AUDITUSER_NAME"));
+                volVal.put("kt_audit_person_id", map.get("AUDITUSER_ID"));
+                volVal.put("audit_desc", map.get("AUDITOPINION"));
+                volVal.put("kt_apply_person_id", map.get("USER_ID"));
+            }
+
             volVal.put("kt_org_id", map.get("ENT_ID"));
             volVal.put("kt_code", map.get("COMPID"));
             volVal.put("name", map.get("COMPNAME"));
@@ -129,8 +142,9 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
             }
             volVal.put("kt_enttype", entType);
             // COMPTYPE
-            volVal.put("kt_enterprise_type", compType);
-            volVal.put("kt_licence", map.get("LICENCE"));
+            //volVal.put("kt_enterprise_type", compType);
+            //volVal.put("kt_licence", map.get("LICENCE"));
+            volVal.put("business_cert_num", map.get("LICENCE"));
             volVal.put("register_funds", map.get("REGCAP"));
             volVal.put("found_date", map.get("ESTDATE"));
             volVal.put("business_end_time", map.get("ENDDATE"));
@@ -181,7 +195,7 @@ public class CompanyAuditMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_cgzx_notes", map.get("CGZX_REMARK"));
 
             // 关联hx_org_id
-            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ENT_ID"));
+            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id","code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), ent_id);
             if (hxOrgId != null) {
                 volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"),null));
                 volVal.put("code", hxOrgId.get("code"));

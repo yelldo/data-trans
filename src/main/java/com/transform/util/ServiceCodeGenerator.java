@@ -35,6 +35,13 @@ public class ServiceCodeGenerator {
         return orgCode.append(orgId).toString();
     }
 
+    /**
+     * 转换地区code
+     * 地区字段转成 code（如：locate_area = 330000,330100,330103）
+     * @param regCode 凯特地区代码
+     * @param tt
+     * @return
+     */
     public static String generateLocateAreaCode(String regCode, TsMysqlTemplate tt) {
         // 所在地区 locate_area
         if (!StrUtils.isBlankOrNullVal(regCode)) {
@@ -56,5 +63,7 @@ public class ServiceCodeGenerator {
         }
         return null;
     }
+
+
 
 }
