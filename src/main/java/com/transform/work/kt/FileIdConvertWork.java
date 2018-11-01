@@ -163,7 +163,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgApply 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         int offset = 0;
-        int limit = 1;
+        int limit = 300;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
