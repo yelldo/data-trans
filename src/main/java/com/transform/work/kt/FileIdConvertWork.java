@@ -115,7 +115,8 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         continue;
                     }
                     String fpath = ktFile.get("FILEPATH") + "";
-                    String fname = ktFile.get("FILENAME") + "";
+                    //String fname = ktFile.get("FILENAME") + "";
+                    String fname = ktFile.get("REALNAME") + "";
 
                     JSONObject json = null;
                     try {
