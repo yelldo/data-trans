@@ -10,6 +10,7 @@ import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -87,26 +88,44 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
                 if ("imported".equals(entType)) {
                     // 代理企业
                     volVal.put("enterprise_type", 2);
-                    volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
                 } else if ("domestic".equals(entType)) {
                     // 生产企业
                     volVal.put("enterprise_type", 1);
-                    volVal.put("product_cert_file", map.get("FILE_PERMIT"));
                 }
             } else if ("2".equals(compType)) {
                 // 配送
                 volVal.put("enterprise_type", 3);
-                volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
             } else if ("3".equals(compType)) {
                 // 生产及配送(暂时在kt耗材联采库中不存在这种类型的)
                 volVal.put("enterprise_type", 5);
             }
+
+            // 凯特生产或经营许可证放同一字段，所以copy到两个字段
+            volVal.put("product_cert_file", map.get("FILE_PERMIT"));
+            volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
+            volVal.put("product_cert_end_date", map.get("REGNOENDDATE"));
+            volVal.put("business_cert_end_date", map.get("REGNOENDDATE"));
+            volVal.put("product_cert_num", map.get("LICENCE"));
+            volVal.put("business_cert_num", map.get("LICENCE"));
+
+            // 福建省药械联合阳光采购申请函
+            volVal.put("application_file", map.get("FILE_AUTHORIZED"));
+
             volVal.put("kt_enttype", entType);
             // COMPTYPE
             //volVal.put("kt_enterprise_type", compType); // TODO  删除hx表字段
             //volVal.put("kt_licence", map.get("LICENCE"));
-            volVal.put("business_cert_num", map.get("LICENCE"));
-            volVal.put("register_funds", map.get("REGCAP"));
+            // 注册资金
+            Object regFunds = map.get("REGCAP");
+            if (regFunds != null) {
+                BigDecimal d = new BigDecimal(regFunds.toString());
+                try {
+                    regFunds = d.setScale(2, BigDecimal.ROUND_HALF_UP).toString();
+                } catch (Exception e) {
+                    log.error("注册资金（万元）转换失败，kt_org_id:{}",map.get("ENT_ID"));
+                }
+            }
+            volVal.put("register_funds", regFunds);
             volVal.put("found_date", map.get("ESTDATE"));
             volVal.put("business_end_time", map.get("ENDDATE"));
             volVal.put("legal_person", map.get("LEREP"));
@@ -120,7 +139,6 @@ public class CompanyHisMergeWork extends AbstractWorker implements Converter {
             volVal.put("modify_time", map.get("AUDITTIME"));
             volVal.put("oversea", map.get("ISHOME"));
             volVal.put("kt_data_network", (map.get("DATA_NETWORK") + "").substring(0, 1));
-            volVal.put("product_cert_end_date", map.get("REGNOENDDATE"));
             // 配送范围（配送地区）
             String disRange = map.get("DISRANGE") + "";
             if (!StrUtils.isBlankOrNullVal(disRange)) {

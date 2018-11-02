@@ -4,6 +4,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,7 +61,11 @@ public class StrUtils {
         //String realPwd = DigestUtils.md5Hex("asd123");
         //System.out.println(DigestUtils.md5Hex(opno+realPwd));
 
-        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("76AF3A5289D698DFE05346681BACE3ED") + DigestUtils.md5Hex("hx123456")));
+        //System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("76AF3A5289D698DFE05346681BACE3ED") + DigestUtils.md5Hex("hx123456")));
+
+        // 金额格式化
+        BigDecimal d = new BigDecimal("666.5653").setScale(2, RoundingMode.HALF_UP);
+        System.out.println(d.toString());
     }
 
 

@@ -114,7 +114,6 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("email", map.get("EMAIL"));
             volVal.put("modify_time", map.get("LASTUPDATE"));
             volVal.put("kt_data_network", (map.get("DATA_NETWORK") + "").substring(0, 1));
-            //volVal.put("primary_account", map.get("ISMAIN")); //????????? TODO
             // 关联机构id
             Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORGANID"));
             if (hxOrgId != null) {
@@ -122,6 +121,17 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             } else {
                 //
                 continue;
+            }
+
+            //1 企业主帐号，0 企业子帐号
+            // 1:主账号,2:子账号,3:管理员（kt）
+            Integer isadmin = ValChangeUtils.toIntegerIfNull(map.get("ISMAIN"), -1);
+            if (isadmin == 1) {
+                volVal.put("primary_account", 1);
+            } else if (isadmin == 0) {
+                volVal.put("primary_account", 2);
+            } else {
+                volVal.put("primary_account", isadmin);
             }
             volVal.put("kt_unitid_id", map.get("UNITID")); //UNITID和ORGANID什么区别
             volVal.put("link_man", map.get("LINKMAIN"));
@@ -190,7 +200,16 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 2 系统管理员，1 企业主帐号，0 企业子帐号
             // 1:主账号,2:子账号,3:管理员（kt）
             int[] paStatus = {2, 1, 3};
-            volVal.put("primary_account", paStatus[ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"), -1)]);
+            Integer isadmin = ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"), -1);
+            if (isadmin == 1) {
+                volVal.put("primary_account", 1);
+            } else if (isadmin == 0) {
+                volVal.put("primary_account", 2);
+            } else if (isadmin == 2) {
+                volVal.put("primary_account", 3);
+            } else {
+                volVal.put("primary_account", isadmin);
+            }
             volVal.put("link_tel", map.get("PHONE"));
             volVal.put("kt_is_activation", map.get("IS_ACTIVATION"));
             volVal.put("reasons_disable", map.get("REASONS_DISABLE"));

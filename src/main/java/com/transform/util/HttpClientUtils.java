@@ -30,10 +30,11 @@ public class HttpClientUtils {
     public static void main(String[] args) throws IOException {
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201806/p1cge40iigqs21kdf12ap1n2h7729.edc";
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201807/p1cja56tae1ucg1fc01a6v17o1q0do.edc";
-        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1ck6v059u160c11gqqnd1mlifhn11.edc";
+        //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1ck6v059u160c11gqqnd1mlifhn11.edc";
+        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201712/p1c1rtbetakj4as2b773vtrdv12.edc";
         String targetUrl = "http://172.18.30.33:9645/dws/pub/upload";
         //String tmpFilePath = "F:\\yelldo\\tmp\\p1cge40iigqs21kdf12ap1n2h7729.edc";
-        String tmpFilePath = "F:\\yelldo\\tmp\\p1ck6v059u160c11gqqnd1mlifhn11.edc";
+        String tmpFilePath = "F:\\yelldo\\tmp\\p1c1rtbetakj4as2b773vtrdv12.edc";
         String content = uploadFile(sourceUrl, targetUrl, tmpFilePath);
         System.out.println(content);
         JSONObject json = JSONObject.parseObject(content);
@@ -68,6 +69,7 @@ public class HttpClientUtils {
             resp = httpclient.execute(httpPost);
             HttpEntity entity = resp.getEntity();
             String content = EntityUtils.toString(entity, Charset.forName("UTF-8"));
+            //System.out.println(content);
             EntityUtils.consume(entity);
             return content;
         } catch (Exception e) {

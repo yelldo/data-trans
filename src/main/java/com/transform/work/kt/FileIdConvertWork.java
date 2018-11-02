@@ -46,6 +46,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
     }
 
     private void convertOrgInfo() {
+        //Object obj = tt.queryFirst(SQL.select("count(1)").from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1 and kt_org_id = '5F7B1B351E7CE1ABE05346681BAC7889'").build()).get("count(1)");
         Object obj = tt.queryFirst(SQL.select("count(1)").from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgInfo 任务开始 ======= total: {}", total);
@@ -105,7 +106,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
             StringBuilder sb = new StringBuilder();
             for (String fileId : fileIdStrs) {
                 // 获取kt的文件id
-                Map<String, Object> ktFile = tt.queryFirst(SQL.select("ATTACH_ID", "FILENAME", "FILEPATH")//
+                Map<String, Object> ktFile = tt.queryFirst(SQL.select("ATTACH_ID", "FILENAME", "REALNAME", "FILEPATH")//
                         .from(MCS_ATTACH_FILE).where("ATTACH_ID = ?").build(), fileId);
                 if (ktFile != null) {
                     String ktFileId = ktFile.get("ATTACH_ID") + "";
