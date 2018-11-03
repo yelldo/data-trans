@@ -24,8 +24,8 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
 
     @Value("${kthc.file.convert.sourceUrlPre:http://120.35.29.87:8082/fjmbid_upload_file/}")
     private String sourceUrlPre;
-    @Value("${kthc.file.convert.targetUrl:http://172.18.30.33:9645/dws/pub/upload}")
-    //@Value("${kthc.file.convert.targetUrl:http://dev0.hxmec.com/dws/pub/upload}")
+    //@Value("${kthc.file.convert.targetUrl:http://172.18.30.33:9645/dws/pub/upload}")
+    @Value("${kthc.file.convert.targetUrl:http://172.18.30.33:9645/dws/pub/uploadForKt}")
     private String targetUrl;
     @Value("${kthc.file.convert.tmpFilePath:F:\\yelldo\\tmp\\temp\\}")
     private String tmpFilePathPre;
@@ -35,13 +35,13 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
     @Override
     public boolean convert() {
         // 加载已经处理过的文件
-        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from ts_fileid_convert");
+        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from ts_fileid_convert where success = true");
         for (Map<String, Object> map : files) {
             ktHxFileIdMap.put(map.get("kt_file_id") + "", map.get("hx_file_id") + "");
         }
         convertOrgInfo();
-        convertOrgApply();
-        convertOrgApplyHis();
+        //convertOrgApply();
+        //convertOrgApplyHis();
         return true;
     }
 
@@ -51,7 +51,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgInfo 任务开始 ======= total: {}", total);
         int limit = 1;
-        int offset = 0;
+        //int offset = 0;
         long dealTotal = 0;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
@@ -73,15 +73,14 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//
-            ).from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
+            ).from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit)/*.offset(offset)*/.build());
             for (Map<String, Object> map : lm) {
                 changeFileId(map, UAS_ORG_INFO);
             }
             int jobNum = lm.size();
-            dealTotal += jobNum;
+            dealTotal += limit;
             log.info("FileIdConvertWork-convertOrgInfo 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
-            offset += limit;
-            if (offset >= total) {
+            if (dealTotal >= total) {
                 break;
             }
         }
@@ -119,10 +118,10 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     // 已经处理过的fileId,直接用处理好的值
                     if (ktHxFileIdMap.containsKey(ktFileId)) {
                         // 转正确的fileId
-                        if (ktHxFileIdMap.get("kt_file_id") != null) {
+                        if (ktHxFileIdMap.get(ktFileId) != null) {
                             sb.append(ktHxFileIdMap.get(ktFileId)).append(",");
+                            continue;
                         }
-                        continue;
                     }
                     String fpath = ktFile.get("FILEPATH") + "";
                     //String fname = ktFile.get("FILENAME") + "";
@@ -143,7 +142,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         ps.put("kt_file_id", ktFileId);
                         ps.put("hx_file_id", hxFileId);
                         ps.put("kt_org_id", ktOrgId);
-                        ps.put("field_name", obj);
+                        ps.put("field_name", key);
                         ps.put("success", true);
                         tt.insert("ts_fileid_convert", ps);
                         ktHxFileIdMap.put(ktFileId, hxFileId);
@@ -178,7 +177,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgApply 任务开始 ======= total: {}", total);
         long dealTotal = 0;
-        int offset = 0;
+        //int offset = 0;
         int limit = 1;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
@@ -202,15 +201,14 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//
-            ).from(UAS_ORG_INFO_MODIFY_APPLY).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
+            ).from(UAS_ORG_INFO_MODIFY_APPLY).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).build());
             for (Map<String, Object> map : lm) {
                 changeFileId(map, UAS_ORG_INFO_MODIFY_APPLY);
             }
             int jobNum = lm.size();
-            dealTotal += jobNum;
+            dealTotal += limit;
             log.info("FileIdConvertWork-convertOrgApply 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
-            offset += limit;
-            if (offset >= total) {
+            if (dealTotal >= total) {
                 break;
             }
         }
@@ -222,7 +220,6 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgApplyHis 任务开始 ======= total: {}", total);
         long dealTotal = 0;
-        int offset = 0;
         int limit = 1;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
@@ -245,15 +242,14 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     "authorization_file",//
                     "authorization_cert_file",//
                     "kt_commitment_file"//
-            ).from(UAS_ORG_INFO_MODIFY_APPLY_HIS).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).offset(offset).build());
+            ).from(UAS_ORG_INFO_MODIFY_APPLY_HIS).where("isFileConvert = 0 and ts_deal_flag = 1").limit(limit).build());
             for (Map<String, Object> map : lm) {
                 changeFileId(map, UAS_ORG_INFO_MODIFY_APPLY_HIS);
             }
             int jobNum = lm.size();
-            dealTotal += jobNum;
+            dealTotal += limit;
             log.info("FileIdConvertWork-convertOrgApplyHis 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
-            offset += limit;
-            if (offset >= total) {
+            if (dealTotal >= total) {
                 break;
             }
         }

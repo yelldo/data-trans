@@ -33,9 +33,9 @@ public class HttpClientUtils {
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201807/p1cja56tae1ucg1fc01a6v17o1q0do.edc";
         String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1ck6v059u160c11gqqnd1mlifhn11.edc";
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201712/p1c1rtbetakj4as2b773vtrdv12.edc";
-        //String targetUrl = "http://172.18.30.33:9645/dws/pub/upload";
+        String targetUrl = "http://172.18.30.33:9645/dws/pub/uploadForKt";
         //String targetUrl = "http://localhost:9645/dws/pub/upload";
-        String targetUrl = "http://localhost:9645/dws/pub/uploadForKt"; // 解决文件中文名乱码
+        //String targetUrl = "http://localhost:9645/dws/pub/uploadForKt"; // 解决文件中文名乱码
         //String tmpFilePath = "F:\\yelldo\\tmp\\p1cge40iigqs21kdf12ap1n2h7729.edc";
         String tmpFilePath = "F:\\yelldo\\tmp\\成功.edc";
         String content = uploadFile(sourceUrl, targetUrl, tmpFilePath);
