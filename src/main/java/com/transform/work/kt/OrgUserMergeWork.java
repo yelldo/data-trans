@@ -142,6 +142,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 1);
+            volVal.put("pwdhxupdate", 0); // 未在海西系统更改过密码
             datas.add(volVal);
         }
         tt.batchInsert(UAS_ORG_USER, datas);
@@ -217,6 +218,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // 错误记录
             volVal.put("ts_notes", sb.toString());
             volVal.put("ts_deal_flag", 2);
+            volVal.put("pwdhxupdate", 0); // 未在海西系统更改过密码
             datas.add(volVal);
         }
         tt.batchInsert(UAS_ORG_USER, datas);

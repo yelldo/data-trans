@@ -64,6 +64,13 @@ public class ServiceCodeGenerator {
         return null;
     }
 
+    public static void main(String[] args) {
+        String sql = SQL.select("a.id as id", "a.parent_id as pid", "b.parent_id as pid2")//
+                .from(AbstractWorker.UAS_BASE_AREA + " a," + AbstractWorker.UAS_BASE_AREA + " b")//
+                .where("a.parent_id = b.id and a.id = ?").build();
+        System.out.println(sql);
+    }
+
 
 
 }

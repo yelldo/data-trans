@@ -50,12 +50,13 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         Object obj = tt.queryFirst(SQL.select("count(1)").from(UAS_ORG_INFO).where("isFileConvert = 0 and ts_deal_flag = 1").build()).get("count(1)");
         int total = ValChangeUtils.toIntegerIfNull(obj, 0);
         log.info("FileIdConvertWork-convertOrgInfo 任务开始 ======= total: {}", total);
-        int limit = 300;
+        int limit = 1;
         int offset = 0;
         long dealTotal = 0;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
+                    "kt_org_id",//
                     "buz_licence_file",//
                     "organization_file",//
                     "tax_file",//
@@ -92,11 +93,16 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         sbuild.append("update ").append(table).append(" set ");
         // 处理的记录主键
         Long recordId = null;
+        String ktOrgId = null;
         for (Map.Entry<String, Object> entry : fileIdMap.entrySet()) {
-            Object obj = entry.getValue();
-            String key = entry.getKey();
+            String key = entry.getKey(); // 文件字段
+            Object obj = entry.getValue();  // 值
             if (obj != null && "id".equals(key)) {
                 recordId = Long.valueOf(obj + "");
+                continue;
+            }
+            if (obj != null && "kt_org_id".equals(key)) {
+                ktOrgId = obj+"";
                 continue;
             }
             if (!(obj instanceof String)) {
@@ -110,9 +116,12 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         .from(MCS_ATTACH_FILE).where("ATTACH_ID = ?").build(), fileId);
                 if (ktFile != null) {
                     String ktFileId = ktFile.get("ATTACH_ID") + "";
+                    // 已经处理过的fileId,直接用处理好的值
                     if (ktHxFileIdMap.containsKey(ktFileId)) {
-                        // 已经处理过的fileId,直接用处理好的值
-                        sb.append(ktHxFileIdMap.get(ktFileId)).append(",");
+                        // 转正确的fileId
+                        if (ktHxFileIdMap.get("kt_file_id") != null) {
+                            sb.append(ktHxFileIdMap.get(ktFileId)).append(",");
+                        }
                         continue;
                     }
                     String fpath = ktFile.get("FILEPATH") + "";
@@ -126,24 +135,30 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         log.error("从kt文件上传到阿里云失败, ktFileId:{}, recordId:{}, field:{}, -----------{}", ktFileId, recordId, key, e);
                         //throw new TsException(String.format("从kt文件上传到阿里云失败, ktFileId:%s, recordId:%s, field:%s",ktFileId, recordId,key),e);
                     }
-                    if (json == null) {
-                        continue;
+                    if (json != null && json.getBoolean("success") != null && json.getBoolean("success")) {
+                        JSONObject content = json.getJSONObject("content");
+                        String hxFileId = content.getString("id");
+                        // 刚处理的fileId存放到map中复用，并持久化
+                        Map<String, Object> ps = new HashMap<>();
+                        ps.put("kt_file_id", ktFileId);
+                        ps.put("hx_file_id", hxFileId);
+                        ps.put("kt_org_id", ktOrgId);
+                        ps.put("field_name", obj);
+                        ps.put("success", true);
+                        tt.insert("ts_fileid_convert", ps);
+                        ktHxFileIdMap.put(ktFileId, hxFileId);
+                        sb.append(hxFileId).append(",");
                     } else {
-                        if (json.getBoolean("success") != null && json.getBoolean("success")) {
-                            JSONObject content = json.getJSONObject("content");
-                            String hxFileId = content.getString("id");
-                            // 刚处理的fileId存放到map中复用，并持久化
-                            Map<String, Object> ps = new HashMap<>();
-                            ps.put("kt_file_id", ktFileId);
-                            ps.put("hx_file_id", hxFileId);
-                            tt.insert("ts_fileid_convert", ps);
-                            ktHxFileIdMap.put(ktFileId, hxFileId);
-                            sb.append(hxFileId).append(",");
-                        } else {
-                            // 上传失败
-                            log.error("从kt文件上传到阿里云失败, ktFileId:{}, recordId:{}, field:{}", ktFileId, recordId, key);
-                            continue;
-                        }
+                        // 上传失败
+                        log.error("从kt文件上传到阿里云失败, ktFileId:{}, recordId:{}, field:{}", ktFileId, recordId, key);
+                        Map<String, Object> ps = new HashMap<>();
+                        ps.put("kt_file_id", ktFileId);
+                        ps.put("kt_org_id", ktOrgId);
+                        ps.put("field_name", key);
+                        ps.put("success", false);
+                        tt.insert("ts_fileid_convert", ps);
+                        ktHxFileIdMap.put(ktFileId, null);
+                        continue;
                     }
                 }
             }
@@ -164,10 +179,11 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgApply 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         int offset = 0;
-        int limit = 300;
+        int limit = 1;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
+                    "kt_org_id",//
                     "buz_licence_file",//
                     "audit_desc_file",//
                     "buz_licence_file",//
@@ -207,10 +223,11 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
         log.info("FileIdConvertWork-convertOrgApplyHis 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         int offset = 0;
-        int limit = 300;
+        int limit = 1;
         while (true) {
             List<Map<String, Object>> lm = tt.query(SQL.select(//
                     "id",//
+                    "kt_org_id",//
                     "buz_licence_file",//
                     "audit_desc_file",//
                     "buz_licence_file",//

@@ -9,6 +9,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
@@ -30,11 +31,13 @@ public class HttpClientUtils {
     public static void main(String[] args) throws IOException {
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201806/p1cge40iigqs21kdf12ap1n2h7729.edc";
         //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201807/p1cja56tae1ucg1fc01a6v17o1q0do.edc";
-        //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1ck6v059u160c11gqqnd1mlifhn11.edc";
-        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201712/p1c1rtbetakj4as2b773vtrdv12.edc";
-        String targetUrl = "http://172.18.30.33:9645/dws/pub/upload";
+        String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201808/p1ck6v059u160c11gqqnd1mlifhn11.edc";
+        //String sourceUrl = "http://120.35.29.87:8082/fjmbid_upload_file/UploadFiles/201712/p1c1rtbetakj4as2b773vtrdv12.edc";
+        //String targetUrl = "http://172.18.30.33:9645/dws/pub/upload";
+        //String targetUrl = "http://localhost:9645/dws/pub/upload";
+        String targetUrl = "http://localhost:9645/dws/pub/uploadForKt"; // 解决文件中文名乱码
         //String tmpFilePath = "F:\\yelldo\\tmp\\p1cge40iigqs21kdf12ap1n2h7729.edc";
-        String tmpFilePath = "F:\\yelldo\\tmp\\p1c1rtbetakj4as2b773vtrdv12.edc";
+        String tmpFilePath = "F:\\yelldo\\tmp\\成功.edc";
         String content = uploadFile(sourceUrl, targetUrl, tmpFilePath);
         System.out.println(content);
         JSONObject json = JSONObject.parseObject(content);
@@ -45,6 +48,46 @@ public class HttpClientUtils {
             System.out.println("失败...");
         }
     }
+
+    /*public static String uploadFile(String sourceUrl, String targetUrl, String tmpFilePath) throws IOException {
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        //HttpGet httpGet = new HttpGet(sourceUrl);
+        //CloseableHttpResponse resp = httpclient.execute(httpGet);
+        CloseableHttpResponse resp = null;
+        try {
+            //HttpEntity entity = resp.getEntity();
+            //byte[] bytes = EntityUtils.toByteArray(resp.getEntity());
+            HttpPost httpPost = new HttpPost(targetUrl);
+            //File file = new File(new String(tmpFilePath.getBytes(), "UTF-8"));
+            File file = new File(tmpFilePath);
+            //FileUtils.copyInputStreamToFile(entity.getContent(), file);
+            //FileUtils.writeByteArrayToFile(file,bytes);
+            FileBody bin = new FileBody(file,ContentType.MULTIPART_FORM_DATA,"我的世界");
+            //FileBody bin = new FileBody(file, ContentType.create("multipart/form-data", Consts.UTF_8), "中文测试");
+            StringBody project = new StringBody("uas", ContentType.create("text/plain", Consts.UTF_8));
+            StringBody filestore = new StringBody("fs", ContentType.create("text/plain", Consts.UTF_8));
+            HttpEntity reqEntity = MultipartEntityBuilder.create().setCharset(Charset.forName("UTF-8"))//
+                    .addPart("file", bin)//
+                    //.addBinaryBody("file", bytes)//
+                    .addPart("project", project)//
+                    .addPart("filestore", filestore)//
+                    .build();
+            httpPost.setEntity(reqEntity);
+            resp = httpclient.execute(httpPost);
+            HttpEntity entity = resp.getEntity();
+            String content = EntityUtils.toString(entity, Charset.forName("UTF-8"));
+            //System.out.println(content);
+            EntityUtils.consume(entity);
+            return content;
+        } catch (Exception e) {
+            log.warn("文件转换失败，ktFileId:{},errorStack:{}", sourceUrl, e);
+        } finally {
+            resp.close();
+            // 删除临时文件
+            //deleteFile(tmpFilePath);
+        }
+        return null;
+    }*/
 
     public static String uploadFile(String sourceUrl, String targetUrl, String tmpFilePath) throws IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -60,10 +103,12 @@ public class HttpClientUtils {
             FileBody bin = new FileBody(file);
             StringBody project = new StringBody("uas", ContentType.create("text/plain", Consts.UTF_8));
             StringBody filestore = new StringBody("fs", ContentType.create("text/plain", Consts.UTF_8));
+            StringBody filename = new StringBody(file.getName(), ContentType.create("text/plain", Consts.UTF_8));
             HttpEntity reqEntity = MultipartEntityBuilder.create()//
                     .addPart("file", bin)//
                     .addPart("project", project)//
                     .addPart("filestore", filestore)//
+                    .addPart("filename", filename)//
                     .build();
             httpPost.setEntity(reqEntity);
             resp = httpclient.execute(httpPost);
