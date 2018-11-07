@@ -1,5 +1,6 @@
 package com.transform.util;
 
+import com.alexfu.sqlitequerybuilder.api.SQLiteQueryBuilder;
 import com.transform.config.TsMysqlTemplate;
 import com.transform.exception.TsException;
 import com.transform.jdbc.SQL;
@@ -38,6 +39,7 @@ public class ServiceCodeGenerator {
     /**
      * 转换地区code
      * 地区字段转成 code（如：locate_area = 330000,330100,330103）
+     *
      * @param regCode 凯特地区代码
      * @param tt
      * @return
@@ -45,9 +47,13 @@ public class ServiceCodeGenerator {
     public static String generateLocateAreaCode(String regCode, TsMysqlTemplate tt) {
         // 所在地区 locate_area
         if (!StrUtils.isBlankOrNullVal(regCode)) {
-            String sql = SQL.select("a.id as id", "a.parent_id as pid", "b.parent_id as pid2")//
-                    .from(AbstractWorker.UAS_BASE_AREA + " a," + AbstractWorker.UAS_BASE_AREA + " b")//
-                    .where("a.parent_id = b.id and a.id = ?").build();
+            String sql = SQL//
+                    .select("a.id as id", "a.parent_id as pid", "b.parent_id as pid2")//
+                    .from(AbstractWorker.UAS_BASE_AREA + " a")//
+                    .leftOuterJoin(AbstractWorker.UAS_BASE_AREA + " b")//
+                    .on("a.parent_id = b.id")//
+                    .where("a.id = ?")//
+                    .build();
             Map<String, Object> area = tt.queryFirst(sql, regCode);
             if (area == null) {
                 Map<String, Object> dcode = tt.queryFirst(SQL.select("CVALUE").from(AbstractWorker.D_CODE).where("CNO = ?").build(), regCode);
@@ -68,9 +74,16 @@ public class ServiceCodeGenerator {
         String sql = SQL.select("a.id as id", "a.parent_id as pid", "b.parent_id as pid2")//
                 .from(AbstractWorker.UAS_BASE_AREA + " a," + AbstractWorker.UAS_BASE_AREA + " b")//
                 .where("a.parent_id = b.id and a.id = ?").build();
+        String sql2 = SQL//
+                .select("a.id as id", "a.parent_id as pid", "b.parent_id as pid2")//
+                .from(AbstractWorker.UAS_BASE_AREA + " a")//
+                .leftOuterJoin(AbstractWorker.UAS_BASE_AREA + " b")//
+                .on("a.parent_id = b.id")//
+                .where("a.id = ?")//
+                .build();
         System.out.println(sql);
+        System.out.println(sql2);
     }
-
 
 
 }

@@ -40,8 +40,8 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
             ktHxFileIdMap.put(map.get("kt_file_id") + "", map.get("hx_file_id") + "");
         }
         convertOrgInfo();
-        //convertOrgApply();
-        //convertOrgApplyHis();
+        convertOrgApply();
+        convertOrgApplyHis();
         return true;
     }
 

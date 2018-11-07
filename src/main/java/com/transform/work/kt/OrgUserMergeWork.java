@@ -149,8 +149,21 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
         return ret.size();
     }
 
+    /**
+     * 如果找不到对应的机构，则根据用户信息来创建机构
+     * @param offset
+     * @param limit
+     * @return
+     */
     private int hxUser(int offset, int limit) {
-        String sql = SQL.select("*").from(HEC_UPO_PRJ_USER).limit(limit).offset(offset).build();
+        String sql = SQL//
+                .select("a.*","b.CERT_NUMBER","b.EXP_DATE","b.CERT_ORG_NAME")//
+                .from(HEC_UPO_PRJ_USER + " a")//
+                .leftOuterJoin(AUTH_USER_CERT + " b")//
+                .on("a.ID = b.USER_ID")//
+                .where("b.DATA_STATUS = '1'")
+                .build();
+        //String sql = SQL.select("*").from(HEC_UPO_PRJ_USER).limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
@@ -166,14 +179,71 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("realname", map.get("USER_NAME"));
             volVal.put("userpwd", map.get("PASSWORD"));
 
-            // 关联机构id
-            Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));
-            if (hxOrgId != null) {
-                volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
+            // ca相关
+            volVal.put("ca_cert", map.get("CERT_NUMBER"));
+            volVal.put("ca_express", map.get("EXP_DATE"));
+            //volVal.put("general_name", map.get("CERT_ORG_NAME")); // 不确定这个字段是不是通用名？？？ TODO
+
+            // 2 系统管理员，1 企业主帐号，0 企业子帐号
+            // 1:主账号,2:子账号,3:管理员（kt）
+            Integer isadmin = ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"), -1);
+            if (isadmin == 1) {
+                volVal.put("primary_account", 1);
+            } else if (isadmin == 0) {
+                volVal.put("primary_account", 2);
+            } else if (isadmin == 2) {
+                volVal.put("primary_account", 3);
             } else {
-                //
-                continue;
+                volVal.put("primary_account", isadmin);
             }
+
+            if ("1".equals(map.get("ORG_ID"))) {
+                if ("1".equals(map.get("USER_TYPE"))) {
+                    // 监管单位账号
+                    volVal.put("primary_account", 3);
+                    volVal.put("org_info_id", 5); // 5 福建监管（申投诉迁移）
+                    sb.append("来自申投诉系统，没有对应机构;");
+                } else if ("4".equals(map.get("USER_TYPE"))) {
+                    // 海西人员账号
+                    volVal.put("primary_account", 3);
+                    volVal.put("org_info_id", 7); // 7 海西运营中心
+                    sb.append("来自申投诉系统，没有对应机构;");
+                }
+
+            } else {
+                // 关联机构id
+                Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));
+                if (hxOrgId != null) {
+                    volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
+                } else {
+                    // 找不到对应的机构就根据用户信息来创建机构
+                    // TODO
+                    //1 监管单位
+                    //2 企业
+                    //3 企业
+                    //4 海西人员账号
+                    //7 配送企业
+                    Map<String, Object> newOrg = new HashMap<>();
+                    if ("2".equals(map.get("USER_TYPE")) || "3".equals(map.get("USER_TYPE"))) {
+                        newOrg.put("enterprise_type", 4);// 生产及代理
+                    } else if ("7".equals(map.get("USER_TYPE"))) {
+                        newOrg.put("enterprise_type", 3);// 配送企业
+                    }
+                    newOrg.put("ts_deal_flag", 2);
+                    newOrg.put("audit_status", 3);
+                    newOrg.put("name", "");
+                    newOrg.put("type", 1);
+                    newOrg.put("code", "");
+                    Long newOrgId = tt.insert(UAS_ORG_INFO, newOrg);
+                    String hxOrgCode = ServiceCodeGenerator.generateOrgCode(1, newOrgId);
+                    newOrg.put("code", hxOrgCode);
+                    newOrg.put("name", "申投诉迁移机构" + hxOrgCode);
+                    tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newOrgId);
+                    // 关联机构id
+                    volVal.put("org_info_id", newOrgId);
+                }
+            }
+
             volVal.put("email", map.get("EMAIL"));
 
             //状态（1:启用,0:禁用）
@@ -191,26 +261,15 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("modify_time", map.get("MODIFY_TIME"));
             volVal.put("latest_login_time", map.get("LAST_LOGIN_TIME"));
             volVal.put("last_login_ip", map.get("LAST_LOGIN_IP"));
+            //kt: 0：超级管理员、2：采购中心、3：医疗机构、5：生产企业、6：监管机构、8：配送企业 9：企业超级用户或生产企业超级用户或医院超级用户
+            //hx-ss: 1：、2：、3：、4：、7：
             volVal.put("kt_op_type", map.get("USER_TYPE")); // 表中没有说明各个值分别表示什么？？？
             volVal.put("kt_project_id", map.get("PROJECT_ID"));
             //kt: 登录方式：0 均可，1 普通登录，2 CA登录
             //hx: 登录方式（1:均可用,2:账号登录,3:CA登录）
             int[] lmStatus = {1, 2, 3};
             volVal.put("loginmode", lmStatus[ValChangeUtils.toIntegerIfNull(map.get("LOGIN_TYPE"), 0)]);
-            volVal.put("general_name", map.get("OPACCOUNT2"));
-            // 2 系统管理员，1 企业主帐号，0 企业子帐号
-            // 1:主账号,2:子账号,3:管理员（kt）
-            int[] paStatus = {2, 1, 3};
-            Integer isadmin = ValChangeUtils.toIntegerIfNull(map.get("IS_ADMIN"), -1);
-            if (isadmin == 1) {
-                volVal.put("primary_account", 1);
-            } else if (isadmin == 0) {
-                volVal.put("primary_account", 2);
-            } else if (isadmin == 2) {
-                volVal.put("primary_account", 3);
-            } else {
-                volVal.put("primary_account", isadmin);
-            }
+            //volVal.put("general_name", map.get("OPACCOUNT2"));
             volVal.put("link_tel", map.get("PHONE"));
             volVal.put("kt_is_activation", map.get("IS_ACTIVATION"));
             volVal.put("reasons_disable", map.get("REASONS_DISABLE"));

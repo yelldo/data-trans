@@ -21,6 +21,7 @@ public abstract class AbstractWorker {
     public static final String MCS_ORGAN_AUDIT = "mcs_organ_audit";
     public static final String MCS_ATTACH_FILE = "mcs_attachfile";
     public static final String HEC_UPO_PRJ_USER = "hec_upo_prj_user";
+    public static final String AUTH_USER_CERT = "auth_user_cert";
     public static final String HEC_DUP_FM_TENDER_ORG = "hec_dup_fm_tender_org";
     public static final String SYS_N_USERS = "sys_n_users";
     public static final String UAS_ORG_INFO = "uas_org_info";

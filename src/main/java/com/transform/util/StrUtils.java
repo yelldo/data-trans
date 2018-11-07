@@ -62,9 +62,9 @@ public class StrUtils {
         //System.out.println(DigestUtils.md5Hex(opno+realPwd));
 
         // 凯特账号密码
-        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("64758F8BF92B11B2E05346681BAC26B7") + DigestUtils.md5Hex("hx123456")));
-        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("CM151104132426044000000000000001") + DigestUtils.md5Hex("hx123456")));
-        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("5F94D986E9E9D579E05346681BACF958") + DigestUtils.md5Hex("hx123456")));
+        System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("64758F8BF93E11B2E05346681BAC26B7") + DigestUtils.md5Hex("hx123456")));
+        //System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("CM151104132426044000000000000001") + DigestUtils.md5Hex("hx123456")));
+        //System.out.println(DigestUtils.md5Hex(DigestUtils.md5Hex("5F94D986E9E9D579E05346681BACF958") + DigestUtils.md5Hex("hx123456")));
         // 公示账号密码
 
 

@@ -123,7 +123,12 @@ public class HospitalMergeWork extends AbstractWorker implements Converter {
             volVal.put("organization_file", map.get("FILE_ORGCODE"));
             volVal.put("buz_licence_file", map.get("FILE_BUSLISCENSE"));
             volVal.put("tax_file", map.get("FILE_TAXREG"));
-            volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
+
+            //volVal.put("kt_product_cert_file", map.get("FILE_PERMIT"));
+            // 在凯特是使用同一个字段，海西是分开两个字段存的
+            volVal.put("product_cert_file", map.get("FILE_PERMIT"));
+            volVal.put("bus_cert_file", map.get("FILE_PERMIT"));
+
             volVal.put("audit_status", 3);
             // 错误记录
             volVal.put("ts_notes", sb.toString());

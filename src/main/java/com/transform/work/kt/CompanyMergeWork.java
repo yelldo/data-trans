@@ -40,7 +40,7 @@ public class CompanyMergeWork extends AbstractWorker implements Converter {
             dealTotal += jobNum;
             log.info("CompanyMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
             offset += limit;
-            if (offset >= 10) {
+            if (offset >= total) {
                 break;
             }
         }

@@ -58,6 +58,10 @@ public class RegulatorMergeWork extends AbstractWorker implements Converter {
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
             volVal.put("type", 3);
+            // kt: 1省级监管,2地市监管,3区县监管
+            // hx: 1:省级监管,2:省属监管,3:地市监管,4:区县监管
+            int[] supLevel = {-1,1,3,4};
+            volVal.put("kt_sup_level", ValChangeUtils.toIntegerIfNull(map.get("REGTYPE"), 0));
             volVal.put("kt_org_id", map.get("REGID"));
             volVal.put("name", map.get("REGULATOR"));
             volVal.put("contact_address", map.get("ADDRS"));
