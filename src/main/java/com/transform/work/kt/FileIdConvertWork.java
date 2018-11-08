@@ -35,7 +35,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
     @Override
     public boolean convert() {
         // 加载已经处理过的文件
-        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from ts_fileid_convert where success = true");
+        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from ts_fileid_convert");
         for (Map<String, Object> map : files) {
             ktHxFileIdMap.put(map.get("kt_file_id") + "", map.get("hx_file_id") + "");
         }
@@ -101,7 +101,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                 continue;
             }
             if (obj != null && "kt_org_id".equals(key)) {
-                ktOrgId = obj+"";
+                ktOrgId = obj + "";
                 continue;
             }
             if (!(obj instanceof String)) {
@@ -115,9 +115,8 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         .from(MCS_ATTACH_FILE).where("ATTACH_ID = ?").build(), fileId);
                 if (ktFile != null) {
                     String ktFileId = ktFile.get("ATTACH_ID") + "";
-                    // 已经处理过的fileId,直接用处理好的值
+                    // 已经处理过的fileId,直接用处理好的值，处理失败过，或未处理的继续转换
                     if (ktHxFileIdMap.containsKey(ktFileId)) {
-                        // 转正确的fileId
                         if (ktHxFileIdMap.get(ktFileId) != null) {
                             sb.append(ktHxFileIdMap.get(ktFileId)).append(",");
                             continue;
@@ -137,26 +136,34 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                     if (json != null && json.getBoolean("success") != null && json.getBoolean("success")) {
                         JSONObject content = json.getJSONObject("content");
                         String hxFileId = content.getString("id");
-                        // 刚处理的fileId存放到map中复用，并持久化
-                        Map<String, Object> ps = new HashMap<>();
-                        ps.put("kt_file_id", ktFileId);
-                        ps.put("hx_file_id", hxFileId);
-                        ps.put("kt_org_id", ktOrgId);
-                        ps.put("field_name", key);
-                        ps.put("success", true);
-                        tt.insert("ts_fileid_convert", ps);
+                        // 如果之前处理失败，现在处理成功，则更新
+                        if (ktHxFileIdMap.containsKey(ktFileId) && ktHxFileIdMap.get(ktFileId) == null) {
+                            tt.update("update ts_fileid_convert set hx_file_id = ?,success = true where kt_file_id = ? and field_name = ?", hxFileId, ktFileId, key);
+                        } else {
+                            // 没处理过的新增
+                            Map<String, Object> ps = new HashMap<>();
+                            ps.put("kt_file_id", ktFileId);
+                            ps.put("hx_file_id", hxFileId);
+                            ps.put("kt_org_id", ktOrgId);
+                            ps.put("field_name", key);
+                            ps.put("success", true);
+                            tt.insert("ts_fileid_convert", ps);
+                        }
+                        // 刚处理的fileId存放到map中复用
                         ktHxFileIdMap.put(ktFileId, hxFileId);
                         sb.append(hxFileId).append(",");
                     } else {
-                        // 上传失败
                         log.error("从kt文件上传到阿里云失败, ktFileId:{}, recordId:{}, field:{}", ktFileId, recordId, key);
-                        Map<String, Object> ps = new HashMap<>();
-                        ps.put("kt_file_id", ktFileId);
-                        ps.put("kt_org_id", ktOrgId);
-                        ps.put("field_name", key);
-                        ps.put("success", false);
-                        tt.insert("ts_fileid_convert", ps);
-                        ktHxFileIdMap.put(ktFileId, null);
+                        // 上传失败,如果没处理过，新增，否则跳过
+                        if (!ktHxFileIdMap.containsKey(ktFileId)) {
+                            Map<String, Object> ps = new HashMap<>();
+                            ps.put("kt_file_id", ktFileId);
+                            ps.put("kt_org_id", ktOrgId);
+                            ps.put("field_name", key);
+                            ps.put("success", false);
+                            tt.insert("ts_fileid_convert", ps);
+                            ktHxFileIdMap.put(ktFileId, null);
+                        }
                         continue;
                     }
                 }

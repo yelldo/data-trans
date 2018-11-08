@@ -3,7 +3,6 @@ package com.transform.work.kt;
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
 import com.transform.util.ServiceCodeGenerator;
-import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
 import com.transform.work.Converter;
@@ -34,7 +33,7 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
         log.info("HxOrgMergeWork 任务开始 ======= total: {}", total);
         long dealTotal = 0;
         while (true) {
-            int jobNum = convertSub(offset, limit);
+            int jobNum = allOrgs(offset, limit);
             dealTotal += jobNum;
             log.info("HxOrgMergeWork 处理中 ======= 处理记录：{},已处理记录：{},完成度：{}", jobNum, dealTotal, CalculateUtils.percentage(dealTotal, total));
             offset += limit;
@@ -46,8 +45,22 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
         return true;
     }
 
-    private int convertSub(int offset, int limit) {
-        String sql = SQL.select("*").from(HEC_DUP_FM_TENDER_ORG).where("DATA_STATUS = '1'").limit(limit).offset(offset).build();
+    private int allOrgs(int offset, int limit) {
+        /*
+        迁移所有机构，无论有没有对应的用户
+         */
+        //String sql = SQL.select("*").from(HEC_DUP_FM_TENDER_ORG).where("DATA_STATUS = '1'").limit(limit).offset(offset).build();
+
+        /*
+        只迁移有对应用户的机构
+         */
+        String sql = SQL//
+                .select("a.*")//
+                .from(HEC_DUP_FM_TENDER_ORG + " a," + HEC_UPO_PRJ_USER + " b")//
+                .where("a.ID = b.ORG_ID and b.STATUS = '1' and a.DATA_STATUS = '1' group by a.ID")//
+                .limit(limit).offset(offset)//
+                .build();
+
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
         // 记录迁移过程的数据错误
@@ -64,20 +77,22 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             // kt:  1生产企业、2代理企业、3生产及代理企业，4 配送机构
             // hx:  1.生产企业,2.代理企业,3.配送企业,4.生产及代理,5.生产及配送,6.代理及配送,7.生产,代理及配送
             if (orgType != null && !orgType.toString().toLowerCase().equals("null")) {
-                // -1 占位
-                int[] ss = {-1,1,2,4,3};
-                volVal.put("type", ss[ValChangeUtils.toIntegerIfNull(orgType,0)]);
-            } else {
-                // 如果企业类型是空的，表示无效的数据
-                continue;
+                // 如果原始数据org_type为空，则指定为生产及代理企业（和俊杰沟通过，这些数据可能是生产企业，或代理企业（即申报企业））
+                int[] ss = {4,1,2,4,3};
+                int hxOrgType = ss[ValChangeUtils.toIntegerIfNull(orgType,0)];
+                volVal.put("type", hxOrgType);
+                if (hxOrgType == 0) {
+                    // orgType == null
+                    sb.append("原始数据ORG_TYPE为空;");
+                }
             }
             // kt: 企业资质审核状态：0审核不通过，1审核通过，2待审核，3未提交，4审核中
-            // hx: 0:初始化,1:待审核,3:审核通过,4:审核不通过
-            Object auditStatus = map.get("ORGDECL_STATUS")+"";
+            volVal.put("kt_orgdecl_status", map.get("ORGDECL_STATUS"));
+            /*Object auditStatus = map.get("ORGDECL_STATUS")+"";
             if (auditStatus != null && !auditStatus.toString().toLowerCase().equals("null")) {
                 int[] ss = {4,3,1,0,1};
                 volVal.put("audit_status", ss[ValChangeUtils.toIntegerIfNull(auditStatus,0)]);
-            }
+            }*/
             volVal.put("create_time", map.get("CREATE_TIME"));
             volVal.put("modify_time", map.get("MODIFY_TIME"));
             // 错误记录
@@ -100,6 +115,17 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             tt.update("update " + UAS_ORG_INFO + " set code = ? where id = ?", hxOrgCode, newIds.get(0));
         }
         return ret.size();
+    }
+
+    public static void main(String[] args) {
+        String sql = SQL//
+                .select("a.*")//
+                .from(HEC_DUP_FM_TENDER_ORG + " a," + HEC_UPO_PRJ_USER + " b")//
+                .where("a.ID = b.ORG_ID and b.STATUS = '1' and a.DATA_STATUS = '1' group by a.ID")//
+                .limit(100).offset(0)//
+                .build();
+
+        System.out.println(sql);
     }
 
 }

@@ -53,8 +53,16 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
     }
 
     private void hxUserConvert() {
-        Object obj = tt.queryFirst(SQL.select("count(1)").from(HEC_UPO_PRJ_USER).build()).get("count(1)");
-        int total = ValChangeUtils.toIntegerIfNull(obj, null);
+        //Object obj = tt.queryFirst(SQL.select("count(1)").from(HEC_UPO_PRJ_USER).build()).get("count(1)");
+        String sql = SQL//
+                .select("a.*", "b.CERT_NUMBER", "b.EXP_DATE", "b.CERT_ORG_NAME")//
+                .from(HEC_UPO_PRJ_USER + " a")//
+                .leftOuterJoin(AUTH_USER_CERT + " b")//
+                .on("a.ID = b.USER_ID")//
+                .where("b.DATA_STATUS = '1' and a.STATUS = '1'").build();
+        List<Object> list = tt.queryForList(sql, null, null);
+        //int total = ValChangeUtils.toIntegerIfNull(obj, null);
+        int total = ValChangeUtils.toIntegerIfNull(list == null ? 0 : list.size(), null);
         int offset = 0;
         int limit = 300;
         log.info("OrgUserMergeWork-hxUserConvert 任务开始 ======= total: {}", total);
@@ -107,7 +115,22 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("notes", map.get("REMARK"));
             volVal.put("kt_secrecy", map.get("SECRECY"));
             volVal.put("kt_op_type", map.get("OPTYPE")); // 表中没有说明各个值分别表示什么？？？
-            volVal.put("loginmode", 1); // kt迁移过来的用户都标记为1均可的登录方式
+
+            // kt: 1、是CA登录，2、不是CA登录
+            // hx: 1:均可用,2:账号登录,3:CA登录
+            Integer loginMode = ValChangeUtils.toIntegerIfNull(map.get("ISCAKEY"), -1);
+            if (loginMode == 1) {
+                // ca登录
+                volVal.put("loginmode", 3);
+            } else if (loginMode == 2) {
+                // 账号登录
+                volVal.put("loginmode", 2);
+            } else {
+                // if null then 均可
+                volVal.put("loginmode", 1);
+                sb.append("迁移数据登录方式为空;");
+            }
+
             // 如果账号为空，则取用户名称
             volVal.put("username", map.get("OPACCOUNT") == null ? map.get("OPNAME") : map.get("OPACCOUNT"));
             volVal.put("general_name", map.get("OPACCOUNT2"));
@@ -151,18 +174,18 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
 
     /**
      * 如果找不到对应的机构，则根据用户信息来创建机构
+     *
      * @param offset
      * @param limit
      * @return
      */
     private int hxUser(int offset, int limit) {
         String sql = SQL//
-                .select("a.*","b.CERT_NUMBER","b.EXP_DATE","b.CERT_ORG_NAME")//
+                .select("a.*", "b.CERT_NUMBER", "b.EXP_DATE", "b.CERT_ORG_NAME")//
                 .from(HEC_UPO_PRJ_USER + " a")//
                 .leftOuterJoin(AUTH_USER_CERT + " b")//
                 .on("a.ID = b.USER_ID")//
-                .where("b.DATA_STATUS = '1'")
-                .build();
+                .where("b.DATA_STATUS = '1' and a.STATUS = '1'").build();
         //String sql = SQL.select("*").from(HEC_UPO_PRJ_USER).limit(limit).offset(offset).build();
         List<Map<String, Object>> ret = tt.queryForMapList(sql);
         List<Map<String, Object>> datas = new ArrayList<>();
@@ -182,7 +205,6 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             // ca相关
             volVal.put("ca_cert", map.get("CERT_NUMBER"));
             volVal.put("ca_express", map.get("EXP_DATE"));
-            //volVal.put("general_name", map.get("CERT_ORG_NAME")); // 不确定这个字段是不是通用名？？？ TODO
 
             // 2 系统管理员，1 企业主帐号，0 企业子帐号
             // 1:主账号,2:子账号,3:管理员（kt）
@@ -197,6 +219,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
                 volVal.put("primary_account", isadmin);
             }
 
+            // ORG_ID=1的账号都是没有对应机构的数据
             if ("1".equals(map.get("ORG_ID"))) {
                 if ("1".equals(map.get("USER_TYPE"))) {
                     // 监管单位账号
@@ -209,7 +232,6 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
                     volVal.put("org_info_id", 7); // 7 海西运营中心
                     sb.append("来自申投诉系统，没有对应机构;");
                 }
-
             } else {
                 // 关联机构id
                 Map<String, Object> hxOrgId = tt.queryFirst(SQL.select("id", "code").from(UAS_ORG_INFO).where("kt_org_id = ?").build(), map.get("ORG_ID"));
@@ -217,7 +239,6 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
                     volVal.put("org_info_id", ValChangeUtils.toLong(hxOrgId.get("id"), null));
                 } else {
                     // 找不到对应的机构就根据用户信息来创建机构
-                    // TODO
                     //1 监管单位
                     //2 企业
                     //3 企业
@@ -267,9 +288,20 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("kt_project_id", map.get("PROJECT_ID"));
             //kt: 登录方式：0 均可，1 普通登录，2 CA登录
             //hx: 登录方式（1:均可用,2:账号登录,3:CA登录）
-            int[] lmStatus = {1, 2, 3};
-            volVal.put("loginmode", lmStatus[ValChangeUtils.toIntegerIfNull(map.get("LOGIN_TYPE"), 0)]);
-            //volVal.put("general_name", map.get("OPACCOUNT2"));
+            Integer loginMode = ValChangeUtils.toIntegerIfNull(map.get("LOGIN_TYPE"), 0);
+            if (loginMode == 2) {
+                // ca登录
+                volVal.put("loginmode", 3);
+            } else if (loginMode == 1) {
+                // 账号登录
+                volVal.put("loginmode", 2);
+            } else if (loginMode == 0){
+                volVal.put("loginmode", 1);
+            } else {
+                // if null then 均可
+                volVal.put("loginmode", 1);
+                sb.append("迁移数据登录方式为空;");
+            }
             volVal.put("link_tel", map.get("PHONE"));
             volVal.put("kt_is_activation", map.get("IS_ACTIVATION"));
             volVal.put("reasons_disable", map.get("REASONS_DISABLE"));
@@ -279,8 +311,7 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
             volVal.put("ts_deal_flag", 2);
             volVal.put("pwdhxupdate", 0); // 未在海西系统更改过密码
             datas.add(volVal);
-        }
-        tt.batchInsert(UAS_ORG_USER, datas);
+        } tt.batchInsert(UAS_ORG_USER, datas);
         return ret.size();
     }
 

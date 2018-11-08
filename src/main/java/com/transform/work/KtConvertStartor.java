@@ -1,6 +1,7 @@
 package com.transform.work;
 
 import com.transform.work.kt.*;
+import com.transform.work.test.SetPasswordUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -32,20 +33,25 @@ public class KtConvertStartor implements CommandLineRunner {
     private OrgUserMergeWork orgUserMergeWork;
     @Resource
     private FileIdConvertWork fileIdConvertWork;
+    @Resource
+    private SetPasswordUtil setPasswordUtil;
 
     @Override
     public void run(String... strings) throws Exception {
         //测试
         //supAreaMergeWork.convert();
 
+        //设置密码
+        //setPasswordUtil.convert();
+
         // 按顺序执行任务
-        //companyMergeWork.convert();
-        //hospitalMergeWork.convert();
-        //regulatorMergeWork.convert();
-        //hxOrgMergeWork.convert();
-        //orgUserMergeWork.convert();
-        //companyAuditMergeWork.convert();
-        //companyHisMergeWork.convert();
+        companyMergeWork.convert();
+        hospitalMergeWork.convert();
+        regulatorMergeWork.convert();
+        hxOrgMergeWork.convert();
+        orgUserMergeWork.convert();
+        companyAuditMergeWork.convert();
+        companyHisMergeWork.convert();
         fileIdConvertWork.convert();
 
     }
