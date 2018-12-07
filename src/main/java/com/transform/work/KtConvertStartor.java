@@ -44,11 +44,18 @@ public class KtConvertStartor implements CommandLineRunner {
         //设置密码
         //setPasswordUtil.convert();
 
-        // 按顺序执行任务
+        /* 按顺序执行任务 */
+        // kt/MCS_COMPANY_INFO -> hx/uas_org_info
         companyMergeWork.convert();
+        // kt/MCS_HOSPITAL_INFO -> hx/uas_org_info
         hospitalMergeWork.convert();
+        // kt/MCS_REGULATOR_INFO -> hx/uas_org_info
         regulatorMergeWork.convert();
+        // hec_dup_fm_tender_org -> uas_org_info
         hxOrgMergeWork.convert();
+        // 机构用户合并
+        // kt : sys_n_users -> uas_org_user
+        // hx : HEC_UPO_PRJ_USER -> uas_org_user
         orgUserMergeWork.convert();
         companyAuditMergeWork.convert();
         companyHisMergeWork.convert();

@@ -18,6 +18,7 @@ import java.util.Map;
  * 监管片区表迁移 kt/D_CODE -> hx/uas_supervise_area_tmp
  * Created by tianhc on 2018/10/16.
  */
+@Deprecated
 @Slf4j
 @Service
 public class SupAreaMergeWork extends AbstractWorker implements Converter {

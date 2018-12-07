@@ -1,0 +1,41 @@
+# 数据迁移涉及的表
+## 来源统一平台
+- uas_org_info
+- uas_org_user
+## 来源凯特
+- mcs_company_info      企业表
+- mcs_hospital_info     医疗机构表
+- mcs_regulator_info    管理单位表
+- mcs_company_info_do   企业变更记录表
+- mcs_company_info_do_his  企业变更操作历史记录表
+- mcs_organ_audit       企业申报审核表
+- sys_n_users           用户表
+- mcs_attachfile        文件表
+- d_code                凯特字典表
+## 来源原申投诉系统
+- hec_dup_fm_tender_org     机构表
+- hec_upo_prj_user          用户表
+- auth_user_cert            ca证书信息与用户关系表
+
+# 数据迁移的内容
+- 凯特的企业、医疗机构、管理单位3类机构及相关的用户
+- 凯特企业申报相关信息，包括企业申报临时信息（mcs_company_info_do）、审计日志（mcs_company_info_do_his）、管理单位审核状态（mcs_organ_audit）
+- 相关的文件（mcs_attachfile）
+- 原申投诉系统的机构和用户
+
+# 代码说明
+## 在springboot启动完成后完成KtConvertStartor中的任务：
+com.transform.work.kt.CompanyAuditMergeWork
+com.transform.work.kt.CompanyHisMergeWork
+com.transform.work.kt.CompanyMergeWork
+com.transform.work.kt.FileIdConvertWork
+com.transform.work.kt.HospitalMergeWork
+com.transform.work.kt.HxOrgMergeWork
+com.transform.work.kt.OrgUserMergeWork
+com.transform.work.kt.RegulatorMergeWork
+
+## 注意事项
+- 启动迁移程序的时候要确保涉及的表都存在
+- 数据迁移有顺序要求，按照KtConvertStartor中定义的顺序执行任务
+- 凯特企业表经与凯特工作人员黄智富沟通，有效数据取创建日期大于'2017-11-27'的数据，CREATETIME > '2017-11-27'
+- 凯特的字典表是d_code

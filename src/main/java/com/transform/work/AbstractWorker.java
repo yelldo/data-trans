@@ -33,4 +33,5 @@ public abstract class AbstractWorker {
     public static final String UAS_BASE_AREA = "uas_base_area";
     public static final String SUPERVISE_AREA_TMP = "uas_supervise_area_tmp";
     public static final String UAS_SUPERVISE_AREA = "uas_supervise_area";
+    public static final String TS_FILEID_CONVERT = "ts_fileid_convert";
 }

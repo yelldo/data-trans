@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 企业信息表迁移合并
- * kt/MCS_COMPANY_INFO + kt/MCS_HOSPITAL_INFO + kt/MCS_REGULATOR_INFO -> hx/uas_org_info
+ * 凯特企业信息表迁移合并
+ * kt/MCS_COMPANY_INFO -> hx/uas_org_info
  * <p>
  * Created by tianhc on 2018/10/16.
  */

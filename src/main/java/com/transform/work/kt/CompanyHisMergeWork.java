@@ -14,9 +14,28 @@ import java.math.BigDecimal;
 import java.util.*;
 
 /**
- * 企业历次审核记录
- * mcs_company_info_do_his a 和 mcs_organ_audit b 关联查询
- * a.ENT_ID = B.LINK_ID and a.ISAUDIT = b.ISAUDIT and a.CHANGEID = b.CHANGEID
+ * 审计日志
+ *
+        SELECT
+        b.AUDITSTATUS,
+        b.CREATETIME AS AUDITTIME,
+        b.AUDITUSER_NAME,
+        b.AUDITUSER_ID,
+        b.AUDITOPINION,
+        b.USER_ID AS APPLYID,
+        a.*
+        FROM
+        mcs_company_info_do_his a,
+        mcs_organ_audit b
+        WHERE
+        a.ISDEL = '0'
+        AND a.ENT_ID = b.LINK_ID
+        AND a.ISAUDIT = b.ISAUDIT
+        AND a.CHANGEID = b.CHANGEID
+
+ 注意：
+ 1. 审计日志如果在uas_org_info中找不到对应的机构，则跳过不处理。以已经导入到uas_org_info表中的机构为准
+
  * <p>
  * Created by tianhc on 2018/10/16.
  */

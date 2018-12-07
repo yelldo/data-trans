@@ -16,6 +16,11 @@ import java.util.Map;
 
 /**
  * 文件迁移
+ *
+ * 1.使用httpclient从凯特文件服务器下载文件再上传到阿里云
+ * 2.处理的结果存在ts_fileid_convert,处理失败的文件基本上就是无效的文件（一般是凯特的测试文件，这块是和凯特的同事黄智富沟通过得）
+ * 3.如果再次执行文件迁移任务，处理成功的文件直接跳过，处理失败的文件会再次处理
+ *
  * Created by tianhc on 2018/10/16.
  */
 @Slf4j
@@ -35,7 +40,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
     @Override
     public boolean convert() {
         // 加载已经处理过的文件
-        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from ts_fileid_convert");
+        List<Map<String, Object>> files = tt.queryForMapList("select kt_file_id,hx_file_id from " + TS_FILEID_CONVERT);
         for (Map<String, Object> map : files) {
             ktHxFileIdMap.put(map.get("kt_file_id") + "", map.get("hx_file_id") + "");
         }
@@ -138,7 +143,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                         String hxFileId = content.getString("id");
                         // 如果之前处理失败，现在处理成功，则更新
                         if (ktHxFileIdMap.containsKey(ktFileId) && ktHxFileIdMap.get(ktFileId) == null) {
-                            tt.update("update ts_fileid_convert set hx_file_id = ?,success = true where kt_file_id = ? and field_name = ?", hxFileId, ktFileId, key);
+                            tt.update("update "+ TS_FILEID_CONVERT +" set hx_file_id = ?,success = true where kt_file_id = ? and field_name = ?", hxFileId, ktFileId, key);
                         } else {
                             // 没处理过的新增
                             Map<String, Object> ps = new HashMap<>();
@@ -147,7 +152,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                             ps.put("kt_org_id", ktOrgId);
                             ps.put("field_name", key);
                             ps.put("success", true);
-                            tt.insert("ts_fileid_convert", ps);
+                            tt.insert(TS_FILEID_CONVERT, ps);
                         }
                         // 刚处理的fileId存放到map中复用
                         ktHxFileIdMap.put(ktFileId, hxFileId);
@@ -161,7 +166,7 @@ public class FileIdConvertWork extends AbstractWorker implements Converter {
                             ps.put("kt_org_id", ktOrgId);
                             ps.put("field_name", key);
                             ps.put("success", false);
-                            tt.insert("ts_fileid_convert", ps);
+                            tt.insert(TS_FILEID_CONVERT, ps);
                             ktHxFileIdMap.put(ktFileId, null);
                         }
                         continue;

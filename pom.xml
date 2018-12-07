@@ -61,11 +61,7 @@
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>1.2.7</version>
+			<version>1.2.50</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
@@ -113,6 +109,14 @@
 			<version>4.5.6</version>
 		</dependency>-->
 
+		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+
+
 	</dependencies>
 
 
@@ -125,12 +129,38 @@
 		</plugins>
 	</build>
 
+	<!--maven私服-->
 	<repositories>
 		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
+			<id>tengxunyun-nexus</id>
+			<name>mynexus</name>
+			<url>http://118.24.112.201:8081/repository/maven-public/</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>tengxunyun-nexus</id>
+			<name>mynexus</name>
+			<url>http://118.24.112.201:8081/repository/maven-public/</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<distributionManagement>
+		<repository>
+			<id>tengxunyun-nexus-releases</id>
+			<name>mynexus-releases</name>
+			<url>http://118.24.112.201:8081/repository/maven-releases/</url>
+		</repository>
+		<snapshotRepository>
+			<id>tengxunyun-nexus-snapshot</id>
+			<name>mynexus-snapshot</name>
+			<url>http://118.24.112.201:8081/repository/maven-snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 
 </project>

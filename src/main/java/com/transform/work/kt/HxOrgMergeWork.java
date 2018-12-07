@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 海西公示系统机构数据合入统一平台
- * hec_dup_fm_tender_org -> mcs_company_info
+ * 原申投诉系统机构数据合入统一平台
+ * hec_dup_fm_tender_org -> uas_org_info
  * <p>
  * Created by tianhc on 2018/10/16.
  */
@@ -117,15 +117,5 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
         return ret.size();
     }
 
-    public static void main(String[] args) {
-        String sql = SQL//
-                .select("a.*")//
-                .from(HEC_DUP_FM_TENDER_ORG + " a," + HEC_UPO_PRJ_USER + " b")//
-                .where("a.ID = b.ORG_ID and b.STATUS = '1' and a.DATA_STATUS = '1' group by a.ID")//
-                .limit(100).offset(0)//
-                .build();
-
-        System.out.println(sql);
-    }
 
 }

@@ -18,8 +18,9 @@ import java.util.Map;
 
 /**
  * 企业申报审核记录迁移
- * kt/mcs_company_info_do + mcs_organ_audit -> org_modify_apply
- * kt/mcs_company_info_his + mcs_organ_audit -> org_modify_apply_his
+ * 以导进来的企业为主(创建时间>'2017-11-27')
+ * 1.如果企业状态是审核通过或初始化状态（DATA_PASS）则根据mcs_company_info往uas_org_info_modify_apply表中添加一条记录
+ * 2.如果企业状态是待提交、待审核、审核不通过，其中间信息是保存在mcs_company_info_do
  * <p>
  * Created by tianhc on 2018/10/16.
  */

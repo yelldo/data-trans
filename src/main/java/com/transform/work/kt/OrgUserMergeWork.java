@@ -3,11 +3,11 @@ package com.transform.work.kt;
 import com.transform.jdbc.SQL;
 import com.transform.util.CalculateUtils;
 import com.transform.util.ServiceCodeGenerator;
-import com.transform.util.StrUtils;
 import com.transform.util.ValChangeUtils;
 import com.transform.work.AbstractWorker;
 import com.transform.work.Converter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,6 +25,12 @@ import java.util.Map;
 @Slf4j
 @Service
 public class OrgUserMergeWork extends AbstractWorker implements Converter {
+
+    @Value("${init.hcsb.regorg.id}")
+    private Long regOrgId;
+
+    @Value("${init.hcsb.platorg.id}")
+    private Long platOrgId;
 
     @Override
     public boolean convert() {
@@ -224,12 +230,12 @@ public class OrgUserMergeWork extends AbstractWorker implements Converter {
                 if ("1".equals(map.get("USER_TYPE"))) {
                     // 监管单位账号
                     volVal.put("primary_account", 3);
-                    volVal.put("org_info_id", 5); // 5 福建监管（申投诉迁移）
+                    volVal.put("org_info_id", regOrgId); // 福建监管（申投诉迁移）
                     sb.append("来自申投诉系统，没有对应机构;");
                 } else if ("4".equals(map.get("USER_TYPE"))) {
                     // 海西人员账号
                     volVal.put("primary_account", 3);
-                    volVal.put("org_info_id", 7); // 7 海西运营中心
+                    volVal.put("org_info_id", platOrgId); // 海西运营中心
                     sb.append("来自申投诉系统，没有对应机构;");
                 }
             } else {
