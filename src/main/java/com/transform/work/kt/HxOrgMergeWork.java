@@ -80,12 +80,17 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
                 // 如果原始数据org_type为空，则指定为生产及代理企业（和俊杰沟通过，这些数据可能是生产企业，或代理企业（即申报企业））
                 int[] ss = {4,1,2,4,3};
                 int hxOrgType = ss[ValChangeUtils.toIntegerIfNull(orgType,0)];
-                volVal.put("type", hxOrgType);
+                // 企业类型
+                volVal.put("enterprise_type", hxOrgType);
                 if (hxOrgType == 0) {
                     // orgType == null
                     sb.append("原始数据ORG_TYPE为空;");
                 }
             }
+
+            // 机构类型 =1 为企业
+            volVal.put("type", 1);
+
             // kt: 企业资质审核状态：0审核不通过，1审核通过，2待审核，3未提交，4审核中
             volVal.put("kt_orgdecl_status", map.get("ORGDECL_STATUS"));
             /*Object auditStatus = map.get("ORGDECL_STATUS")+"";
