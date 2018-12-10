@@ -45,6 +45,15 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
         return true;
     }
 
+    public static void main(String[] args) {
+        String sql = SQL//
+                .select("a.*")//
+                .from(HEC_DUP_FM_TENDER_ORG + " a," + HEC_UPO_PRJ_USER + " b")//
+                .where("a.ID = b.ORG_ID and b.STATUS = '1' and a.DATA_STATUS = '1' group by a.ID")//
+                .build();
+        System.out.println(sql);
+    }
+
     private int allOrgs(int offset, int limit) {
         /*
         迁移所有机构，无论有没有对应的用户
@@ -70,7 +79,6 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
             sb.delete(0, sb.length());
             Map<String, Object> volVal = new HashMap<>();
             volVal.put("kt_org_id", map.get("ID"));
-            volVal.put("code", map.get("ORG_CODE"));
             volVal.put("name", map.get("ORG_NAME"));
             volVal.put("org_short_name", map.get("ORG_ABBR"));
             Object orgType = map.get("ORG_TYPE");
@@ -82,10 +90,9 @@ public class HxOrgMergeWork extends AbstractWorker implements Converter {
                 int hxOrgType = ss[ValChangeUtils.toIntegerIfNull(orgType,0)];
                 // 企业类型
                 volVal.put("enterprise_type", hxOrgType);
-                if (hxOrgType == 0) {
-                    // orgType == null
-                    sb.append("原始数据ORG_TYPE为空;");
-                }
+            }else{
+                // orgType == null
+                sb.append("原始数据ORG_TYPE为空;");
             }
 
             // 机构类型 =1 为企业

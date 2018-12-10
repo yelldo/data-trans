@@ -94,7 +94,6 @@ public class HospitalMergeWork extends AbstractWorker implements Converter {
                 // 其他
                 volVal.put("hospital_kind", 5);
             }
-            volVal.put("hospital_kind", map.get("HOSPITALTYPE"));
             volVal.put("hospital_base", map.get("ISBASE"));
             // 监管片区
             Object supArea = map.get("AREA");
@@ -115,7 +114,7 @@ public class HospitalMergeWork extends AbstractWorker implements Converter {
                     sb.append("'D_CODE'中没有对应的医疗机构等级;");
                     volVal.put("hospital_level", hosLevel);
                 } else {
-                    volVal.put("hospital_level", level.get("CVALUE"));
+                    volVal.put("hospital_level", level.get("ORDIDX"));
                 }
             }
 

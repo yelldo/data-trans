@@ -1,13 +1,11 @@
 package com.transform.util;
 
-import com.alexfu.sqlitequerybuilder.api.SQLiteQueryBuilder;
 import com.transform.config.TsMysqlTemplate;
 import com.transform.exception.TsException;
 import com.transform.jdbc.SQL;
 import com.transform.work.AbstractWorker;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.Map;
 
 /**
